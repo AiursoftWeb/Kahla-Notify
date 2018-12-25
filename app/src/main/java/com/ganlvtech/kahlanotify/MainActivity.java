@@ -13,6 +13,7 @@ import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -73,14 +74,15 @@ public class MainActivity extends Activity {
         final EditText editTextPassword = new EditText(this);
         final CheckBox checkBoxStaging = new CheckBox(this);
         Button buttonLogin = new Button(this);
+        final CheckBox checkBoxWakeScreen = new CheckBox(this);
         stopButtonsContainer = new LinearLayout(this);
-        Button buttonStop = new Button(this);
         Button buttonForceExit = new Button(this);
 
         final SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
         String username = sharedPreferences.getString("username", "");
         String password = sharedPreferences.getString("password", "");
         boolean staging = sharedPreferences.getBoolean("staging", true);
+        boolean wakeScreen = sharedPreferences.getBoolean("wakeScreen", true);
 
         container.setOrientation(LinearLayout.VERTICAL);
         textViewUsername.setText("邮箱");
@@ -91,8 +93,9 @@ public class MainActivity extends Activity {
         checkBoxStaging.setText("使用 Kahla 测试服务器");
         checkBoxStaging.setChecked(staging);
         buttonLogin.setText("登录");
+        checkBoxWakeScreen.setText("通知时亮起屏幕");
+        checkBoxWakeScreen.setChecked(wakeScreen);
         stopButtonsContainer.setOrientation(LinearLayout.VERTICAL);
-        buttonStop.setText("退出全部账号");
         buttonForceExit.setText("强制退出");
 
         container.addView(textViewUsername);
@@ -101,11 +104,19 @@ public class MainActivity extends Activity {
         container.addView(editTextPassword);
         container.addView(checkBoxStaging);
         container.addView(buttonLogin);
+        container.addView(checkBoxWakeScreen);
         container.addView(stopButtonsContainer);
-        container.addView(buttonStop);
         container.addView(buttonForceExit);
         view.addView(container);
 
+        checkBoxWakeScreen.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putBoolean("wakeScreen", isChecked);
+                editor.apply();
+            }
+        });
         buttonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -129,12 +140,6 @@ public class MainActivity extends Activity {
                 }
                 String title = serverEnvironment + " | " + username;
                 kahlaService.addChannel(baseUrl, username, password, title);
-            }
-        });
-        buttonStop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                kahlaService.stopAllKahlaWebSocketClients();
             }
         });
         buttonForceExit.setOnClickListener(new View.OnClickListener() {
