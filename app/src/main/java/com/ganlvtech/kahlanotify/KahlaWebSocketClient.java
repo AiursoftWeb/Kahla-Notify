@@ -20,33 +20,74 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
 public class KahlaWebSocketClient {
-    public static final int STATE_DEFAULT = 0;
-    public static final int STATE_CONNECTING = 1;
-    public static final int STATE_CONNECTED = 2;
-    public static final int STATE_STOPPING = 3;
-    public static final int STATE_STOPPED = 4;
-    public static final int STATE_FAILURE = 5;
     public String tag;
-    private String url;
-    private int state = STATE_DEFAULT;
+    private OkHttpClient client;
+    private Request request;
     private WebSocket webSocket;
+    private boolean autoRetry;
+    private int retryInterval;
     private OnOpenListener onOpenListener = null;
     private OnMessageListener onMessageListener = null;
     private OnDecryptedMessageListener onDecryptedMessageListener = null;
     private OnClosedListener onClosedListener = null;
+    private OnStopListener onStopListener = null;
     private OnFailureListener onFailureListener = null;
+    private WebSocketListener webSocketListener = new WebSocketListener() {
+        @Override
+        public void onOpen(WebSocket webSocket, Response response) {
+            if (onOpenListener != null) {
+                onOpenListener.onOpen(webSocket, response);
+            }
+            retryInterval = 0;
+        }
+
+        @Override
+        public void onMessage(WebSocket webSocket, String text) {
+            if (onMessageListener != null) {
+                onMessageListener.onMessage(webSocket, text);
+            }
+            if (onDecryptedMessageListener != null) {
+                try {
+                    JSONObject jsonObject = new JSONObject(text);
+                    String aesKey = jsonObject.getString("aesKey");
+                    String content = jsonObject.getString("content");
+                    String senderNickname = jsonObject.getJSONObject("sender").getString("nickName");
+                    String senderEmail = jsonObject.getJSONObject("sender").getString("email");
+                    byte[] bytes = CryptoJs.aesDecrypt(content, aesKey);
+                    content = new String(bytes, "UTF-8");
+                    onDecryptedMessageListener.onDecryptedMessage(content, senderNickname, senderEmail, webSocket, text);
+                } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        @Override
+        public void onClosed(WebSocket webSocket, int code, String reason) {
+            if (onClosedListener != null) {
+                onClosedListener.onClosed(webSocket, code, reason);
+            }
+            retry(webSocket);
+        }
+
+        @Override
+        public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+            if (onFailureListener != null) {
+                onFailureListener.onFailure(webSocket, t, response);
+            }
+            retry(webSocket);
+        }
+    };
 
     public KahlaWebSocketClient(String url) {
-        this.url = url;
-        this.tag = url;
-    }
-
-    public int getState() {
-        return state;
-    }
-
-    public WebSocket getWebSocket() {
-        return webSocket;
+        tag = url;
+        autoRetry = true;
+        client = new OkHttpClient.Builder()
+                .readTimeout(10, TimeUnit.SECONDS)
+                .build();
+        request = new Request.Builder()
+                .url(url)
+                .build();
     }
 
     public void setOnOpenListener(OnOpenListener onOpenListener) {
@@ -69,68 +110,47 @@ public class KahlaWebSocketClient {
         this.onFailureListener = onFailureListener;
     }
 
-    public WebSocket connect() {
-        state = STATE_CONNECTING;
-        OkHttpClient client = new OkHttpClient.Builder()
-                .readTimeout(10, TimeUnit.SECONDS)
-                .build();
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-        webSocket = client.newWebSocket(request, new WebSocketListener() {
-            @Override
-            public void onOpen(WebSocket webSocket, Response response) {
-                state = STATE_CONNECTED;
-                if (onOpenListener != null) {
-                    onOpenListener.onOpen(webSocket, response);
-                }
-            }
+    public void setOnStopListener(OnStopListener onStopListener) {
+        this.onStopListener = onStopListener;
+    }
 
-            @Override
-            public void onMessage(WebSocket webSocket, String text) {
-                if (onMessageListener != null) {
-                    onMessageListener.onMessage(webSocket, text);
-                }
-                if (onDecryptedMessageListener != null) {
-                    try {
-                        JSONObject jsonObject = new JSONObject(text);
-                        String aesKey = jsonObject.getString("aesKey");
-                        String content = jsonObject.getString("content");
-                        String senderNickname = jsonObject.getJSONObject("sender").getString("nickName");
-                        String senderEmail = jsonObject.getJSONObject("sender").getString("email");
-                        byte[] bytes = CryptoJs.aesDecrypt(content, aesKey);
-                        content = new String(bytes, "UTF-8");
-                        onDecryptedMessageListener.onDecryptedMessage(content, senderNickname, senderEmail, webSocket, text);
-                    } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            @Override
-            public void onClosed(WebSocket webSocket, int code, String reason) {
-                if (onClosedListener != null) {
-                    onClosedListener.onClosed(webSocket, code, reason);
-                }
-                state = STATE_STOPPED;
-            }
-
-            @Override
-            public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-                if (onFailureListener != null) {
-                    onFailureListener.onFailure(webSocket, t, response);
-                }
-                state = STATE_FAILURE;
-            }
-        });
-        return webSocket;
+    public void connect() {
+        webSocket = client.newWebSocket(request, webSocketListener);
     }
 
     public void stop() {
+        autoRetry = false;
         if (webSocket != null) {
-            state = STATE_STOPPING;
             webSocket.cancel();
             webSocket = null;
+        }
+    }
+
+    private void retry(WebSocket webSocket) {
+        if (autoRetry) {
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(retryInterval * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    connect();
+                    if (retryInterval <= 0) {
+                        retryInterval += 1;
+                    } else {
+                        retryInterval *= 2;
+                        if (retryInterval > 600) {
+                            retryInterval = 600;
+                        }
+                    }
+                }
+            }.start();
+        } else {
+            if (onStopListener != null) {
+                onStopListener.onStop(webSocket);
+            }
         }
     }
 
@@ -152,5 +172,9 @@ public class KahlaWebSocketClient {
 
     public interface OnFailureListener {
         void onFailure(WebSocket webSocket, Throwable t, Response response);
+    }
+
+    public interface OnStopListener {
+        void onStop(WebSocket webSocket);
     }
 }

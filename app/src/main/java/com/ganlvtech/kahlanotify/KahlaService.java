@@ -120,42 +120,7 @@ public class KahlaService extends Service {
                         });
                         return;
                     }
-                    final KahlaWebSocketClient kahlaWebSocketClient = new KahlaWebSocketClient(webSocketUrl);
-                    kahlaWebSocketClient.tag = title;
-                    kahlaWebSocketClient.setOnOpenListener(new KahlaWebSocketClient.OnOpenListener() {
-                        @Override
-                        public void onOpen(WebSocket webSocket, Response response) {
-                            Log.d("KahlaWebSocketClient", "Connected");
-                        }
-                    });
-                    kahlaWebSocketClient.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
-                        @Override
-                        public void onDecryptedMessage(final String content, final String senderNickName, String senderEmail, WebSocket webSocket, String originalText) {
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    KahlaService.this.notify(content, senderNickName + " [" + title + "]");
-                                }
-                            });
-                        }
-                    });
-                    kahlaWebSocketClient.setOnClosedListener(new KahlaWebSocketClient.OnClosedListener() {
-                        @Override
-                        public void onClosed(WebSocket webSocket, int code, String reason) {
-                            kahlaWebSocketClients.remove(kahlaWebSocketClient);
-                            clientChanged();
-                        }
-                    });
-                    kahlaWebSocketClient.setOnFailureListener(new KahlaWebSocketClient.OnFailureListener() {
-                        @Override
-                        public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-                            kahlaWebSocketClients.remove(kahlaWebSocketClient);
-                            clientChanged();
-                        }
-                    });
-                    kahlaWebSocketClient.connect();
-                    kahlaWebSocketClients.add(kahlaWebSocketClient);
-                    clientChanged();
+                    addKahlaWebSocketClient(webSocketUrl, title);
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
                 }
@@ -163,19 +128,55 @@ public class KahlaService extends Service {
         }.start();
     }
 
+    private void addKahlaWebSocketClient(final String webSocketUrl, final String title) {
+        final KahlaWebSocketClient kahlaWebSocketClient = new KahlaWebSocketClient(webSocketUrl);
+        kahlaWebSocketClient.tag = title;
+        kahlaWebSocketClient.setOnOpenListener(new KahlaWebSocketClient.OnOpenListener() {
+            @Override
+            public void onOpen(WebSocket webSocket, Response response) {
+                Log.d("KahlaWebSocketClient", "Connected");
+            }
+        });
+        kahlaWebSocketClient.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
+            @Override
+            public void onDecryptedMessage(final String content, final String senderNickName, String senderEmail, WebSocket webSocket, String originalText) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        KahlaService.this.notify(content, senderNickName + " [" + title + "]");
+                    }
+                });
+            }
+        });
+        kahlaWebSocketClient.setOnClosedListener(new KahlaWebSocketClient.OnClosedListener() {
+            @Override
+            public void onClosed(WebSocket webSocket, int code, String reason) {
+                Log.d("KahlaWebSocketClient", "Closed");
+            }
+        });
+        kahlaWebSocketClient.setOnFailureListener(new KahlaWebSocketClient.OnFailureListener() {
+            @Override
+            public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+                Log.d("KahlaWebSocketClient", "Failure");
+            }
+        });
+        kahlaWebSocketClient.setOnStopListener(new KahlaWebSocketClient.OnStopListener() {
+            @Override
+            public void onStop(WebSocket webSocket) {
+                Log.d("KahlaWebSocketClient", "Stopped");
+                kahlaWebSocketClients.remove(kahlaWebSocketClient);
+                clientChanged();
+            }
+        });
+        kahlaWebSocketClient.connect();
+        kahlaWebSocketClients.add(kahlaWebSocketClient);
+        clientChanged();
+    }
+
     public void stopAllKahlaWebSocketClients() {
         for (KahlaWebSocketClient kahlaWebSocketClient : kahlaWebSocketClients) {
             kahlaWebSocketClient.stop();
         }
-    }
-
-    public String toString() {
-        StringBuilder output = new StringBuilder();
-        for (KahlaWebSocketClient kahlaWebSocketClient : kahlaWebSocketClients) {
-            output.append(kahlaWebSocketClient.tag);
-            output.append("\n");
-        }
-        return output.toString();
     }
 
     public interface OnClientChangedListener {
