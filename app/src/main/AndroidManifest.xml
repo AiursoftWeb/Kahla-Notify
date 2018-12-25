@@ -6,7 +6,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <application android:label="Kahla Notify">
+    <application
+        android:icon="@drawable/icon"
+        android:label="Kahla Notify">
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
