@@ -140,6 +140,12 @@ public class KahlaService extends Service {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
                 Log.d("KahlaWebSocketClient", "Connected");
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        toast("Connected", title);
+                    }
+                });
             }
         });
         kahlaWebSocketClient.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
