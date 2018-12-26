@@ -69,6 +69,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         ScrollView view = new ScrollView(this);
+        LinearLayout linearLayoutInitialFoucs = new LinearLayout(this);
         LinearLayout container = new LinearLayout(this);
         TextView textViewUsername = new TextView(this);
         final EditText editTextUsername = new EditText(this);
@@ -87,6 +88,9 @@ public class MainActivity extends Activity {
         boolean staging = sharedPreferences.getBoolean("staging", true);
         boolean wakeScreen = sharedPreferences.getBoolean("wakeScreen", true);
 
+        linearLayoutInitialFoucs.setFocusable(true);
+        linearLayoutInitialFoucs.setFocusableInTouchMode(true);
+        linearLayoutInitialFoucs.requestFocus();
         container.setOrientation(LinearLayout.VERTICAL);
         textViewUsername.setText("邮箱");
         editTextUsername.setText(username);
@@ -101,6 +105,7 @@ public class MainActivity extends Activity {
         stopButtonsContainer.setOrientation(LinearLayout.VERTICAL);
         buttonForceExit.setText("强制退出");
 
+        container.addView(linearLayoutInitialFoucs);
         container.addView(textViewUsername);
         container.addView(editTextUsername);
         container.addView(textViewPassword);
