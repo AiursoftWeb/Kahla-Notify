@@ -15,9 +15,6 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.json.JSONException;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,16 +26,8 @@ public class KahlaService extends Service {
     private final static AtomicInteger counter = new AtomicInteger(1);
     private IBinder binder = new ServiceBinder();
     private Handler handler = new Handler();
-    private List<KahlaWebSocketClient> kahlaWebSocketClients = new ArrayList<>();
+    private List<KahlaChannel> kahlaChannels = new ArrayList<>();
     private OnClientChangedListener onClientChangedListener = null;
-
-    public List<KahlaWebSocketClient> getKahlaWebSocketClients() {
-        return kahlaWebSocketClients;
-    }
-
-    public void setOnClientChangedListener(OnClientChangedListener onClientChangedListener) {
-        this.onClientChangedListener = onClientChangedListener;
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -91,42 +80,32 @@ public class KahlaService extends Service {
     }
 
     public void addChannel(final String baseUrl, final String username, final String password, final String title) {
-        new Thread() {
+        final KahlaChannel kahlaChannel = new KahlaChannel(baseUrl, username, password, title);
+        kahlaChannel.setOnLoginFailedListener(new KahlaChannel.OnLoginFailedListener() {
             @Override
-            public void run() {
-                try {
-                    final KahlaWebApiClient kahlaWebApiClient = new KahlaWebApiClient(baseUrl);
-                    if (!kahlaWebApiClient.Login(username, password)) {
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                toast("Login Failed", title);
-                            }
-                        });
-                        return;
+            public void onLoginFailed(String baseUrl, String username, String password, final String title) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        toast("Login Failed", title);
                     }
-                    String webSocketUrl = kahlaWebApiClient.getWebSocketUrl();
-                    if (webSocketUrl == null) {
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                toast("Get WebSocket URL Failed", title);
-                            }
-                        });
-                        return;
-                    }
-                    addKahlaWebSocketClient(webSocketUrl, title);
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-                }
+                });
+                clientChanged();
             }
-        }.start();
-    }
-
-    private void addKahlaWebSocketClient(final String webSocketUrl, final String title) {
-        final KahlaWebSocketClient kahlaWebSocketClient = new KahlaWebSocketClient(webSocketUrl);
-        kahlaWebSocketClient.tag = title;
-        kahlaWebSocketClient.setOnOpenListener(new KahlaWebSocketClient.OnOpenListener() {
+        });
+        kahlaChannel.setOnGetWebSocketUrlFailedListener(new KahlaChannel.OnGetWebSocketUrlFailedListener() {
+            @Override
+            public void onGetWebSocketUrlFailed(String baseUrl, String username, String password, final String title) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        toast("Get WebSocket URL Failed", title);
+                    }
+                });
+                clientChanged();
+            }
+        });
+        kahlaChannel.setOnOpenListener(new KahlaWebSocketClient.OnOpenListener() {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
                 Log.d("KahlaWebSocketClient", "Connected");
@@ -139,7 +118,7 @@ public class KahlaService extends Service {
                 clientChanged();
             }
         });
-        kahlaWebSocketClient.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
+        kahlaChannel.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
             @Override
             public void onDecryptedMessage(final String content, final String senderNickName, String senderEmail, WebSocket webSocket, String originalText) {
                 handler.post(new Runnable() {
@@ -150,11 +129,11 @@ public class KahlaService extends Service {
                 });
             }
         });
-        kahlaWebSocketClient.setOnClosedListener(new KahlaWebSocketClient.OnClosedListener() {
+        kahlaChannel.setOnClosedListener(new KahlaWebSocketClient.OnClosedListener() {
             @Override
             public void onClosed(WebSocket webSocket, int code, String reason) {
                 Log.d("KahlaWebSocketClient", "Closed");
-                if (kahlaWebSocketClient.isAutoRetry() && kahlaWebSocketClient.getRetryCount() <= 0) {
+                if (kahlaChannel.getKahlaWebSocketClient().isAutoRetry() && kahlaChannel.getKahlaWebSocketClient().getRetryCount() <= 0) {
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -165,11 +144,11 @@ public class KahlaService extends Service {
                 clientChanged();
             }
         });
-        kahlaWebSocketClient.setOnFailureListener(new KahlaWebSocketClient.OnFailureListener() {
+        kahlaChannel.setOnFailureListener(new KahlaWebSocketClient.OnFailureListener() {
             @Override
             public void onFailure(WebSocket webSocket, Throwable t, Response response) {
                 Log.d("KahlaWebSocketClient", "Failure");
-                if (kahlaWebSocketClient.isAutoRetry() && kahlaWebSocketClient.getRetryCount() <= 0) {
+                if (kahlaChannel.getKahlaWebSocketClient().isAutoRetry() && kahlaChannel.getKahlaWebSocketClient().getRetryCount() <= 0) {
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -180,7 +159,7 @@ public class KahlaService extends Service {
                 clientChanged();
             }
         });
-        kahlaWebSocketClient.setOnStopListener(new KahlaWebSocketClient.OnStopListener() {
+        kahlaChannel.setOnStopListener(new KahlaWebSocketClient.OnStopListener() {
             @Override
             public void onStop(WebSocket webSocket) {
                 Log.d("KahlaWebSocketClient", "Stopped");
@@ -190,13 +169,19 @@ public class KahlaService extends Service {
                         toast("Stopped", title);
                     }
                 });
-                kahlaWebSocketClients.remove(kahlaWebSocketClient);
+                kahlaChannels.remove(kahlaChannel);
                 clientChanged();
             }
         });
-        kahlaWebSocketClient.connect();
-        kahlaWebSocketClients.add(kahlaWebSocketClient);
+        kahlaChannels.add(kahlaChannel);
         clientChanged();
+        new Thread() {
+            @Override
+            public void run() {
+                kahlaChannel.connect();
+                clientChanged();
+            }
+        }.start();
     }
 
     private void clientChanged() {
@@ -204,7 +189,7 @@ public class KahlaService extends Service {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    onClientChangedListener.onClientChanged(kahlaWebSocketClients);
+                    onClientChangedListener.onClientChanged();
                 }
             });
         }
@@ -212,21 +197,37 @@ public class KahlaService extends Service {
 
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        for (KahlaWebSocketClient kahlaWebSocketClient : kahlaWebSocketClients) {
-            stringBuilder.append(kahlaWebSocketClient.tag);
+        for (KahlaChannel kahlaChannel : kahlaChannels) {
+            stringBuilder.append(kahlaChannel.getTitle());
             String state;
-            switch (kahlaWebSocketClient.getState()) {
-                case KahlaWebSocketClient.STATE_NEW:
-                    state = "连接中";
+            switch (kahlaChannel.getState()) {
+                case KahlaChannel.STATE_NEW:
+                    state = "初始化";
                     break;
-                case KahlaWebSocketClient.STATE_OPEN:
-                    state = "连接成功";
+                case KahlaChannel.STATE_LOGIN:
+                    state = "登录中";
                     break;
-                case KahlaWebSocketClient.STATE_RETRY:
-                    state = "重连中（第 " + kahlaWebSocketClient.getRetryCount() + " 次重试）";
+                case KahlaChannel.STATE_GET_WEBSOCKET_URL:
+                    state = "正在获取 WebSocket 链接";
                     break;
-                case KahlaWebSocketClient.STATE_STOP:
-                    state = "退出";
+                case KahlaChannel.STATE_WEBSOCKET:
+                    KahlaWebSocketClient kahlaWebSocketClient = kahlaChannel.getKahlaWebSocketClient();
+                    switch (kahlaWebSocketClient.getState()) {
+                        case KahlaWebSocketClient.STATE_NEW:
+                            state = "连接中";
+                            break;
+                        case KahlaWebSocketClient.STATE_OPEN:
+                            state = "连接成功";
+                            break;
+                        case KahlaWebSocketClient.STATE_RETRY:
+                            state = "重连中（第 " + kahlaWebSocketClient.getRetryCount() + " 次重试）";
+                            break;
+                        case KahlaWebSocketClient.STATE_STOP:
+                            state = "退出";
+                            break;
+                        default:
+                            state = "Unknown state";
+                    }
                     break;
                 default:
                     state = "Unknown state";
@@ -238,14 +239,16 @@ public class KahlaService extends Service {
         return stringBuilder.toString();
     }
 
-    public void stopAllKahlaWebSocketClients() {
-        for (KahlaWebSocketClient kahlaWebSocketClient : kahlaWebSocketClients) {
-            kahlaWebSocketClient.stop();
-        }
+    public void setOnClientChangedListener(OnClientChangedListener onClientChangedListener) {
+        this.onClientChangedListener = onClientChangedListener;
+    }
+
+    public List<KahlaChannel> getKahlaChannels() {
+        return kahlaChannels;
     }
 
     public interface OnClientChangedListener {
-        void onClientChanged(List<KahlaWebSocketClient> kahlaWebSocketClients);
+        void onClientChanged();
     }
 
     public class ServiceBinder extends Binder {

@@ -101,6 +101,44 @@ public class KahlaWebSocketClient {
                 .build();
     }
 
+    public void connect() {
+        webSocket = client.newWebSocket(request, webSocketListener);
+    }
+
+    public void stop() {
+        autoRetry = false;
+        if (webSocket != null) {
+            webSocket.cancel();
+            webSocket = null;
+        }
+    }
+
+    private void retry(WebSocket webSocket) {
+        if (autoRetry) {
+            state = STATE_RETRY;
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(retryInterval * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (retryInterval < 10) {
+                        retryInterval += 1;
+                    }
+                    retryCount++;
+                    connect();
+                }
+            }.start();
+        } else {
+            state = STATE_STOP;
+            if (onStopListener != null) {
+                onStopListener.onStop(webSocket);
+            }
+        }
+    }
+
     public boolean isAutoRetry() {
         return autoRetry;
     }
@@ -135,44 +173,6 @@ public class KahlaWebSocketClient {
 
     public void setOnStopListener(OnStopListener onStopListener) {
         this.onStopListener = onStopListener;
-    }
-
-    public void connect() {
-        webSocket = client.newWebSocket(request, webSocketListener);
-    }
-
-    public void stop() {
-        autoRetry = false;
-        if (webSocket != null) {
-            webSocket.close(1000, null);
-            webSocket = null;
-        }
-    }
-
-    private void retry(WebSocket webSocket) {
-        if (autoRetry) {
-            state = STATE_RETRY;
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(retryInterval * 1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if (retryInterval < 10) {
-                        retryInterval += 1;
-                    }
-                    retryCount++;
-                    connect();
-                }
-            }.start();
-        } else {
-            state = STATE_STOP;
-            if (onStopListener != null) {
-                onStopListener.onStop(webSocket);
-            }
-        }
     }
 
     public interface OnOpenListener {

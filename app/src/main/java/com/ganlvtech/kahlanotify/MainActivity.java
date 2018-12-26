@@ -19,8 +19,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import java.util.List;
-
 public class MainActivity extends Activity {
     private LinearLayout stopButtonsContainer;
     private Handler handler = new Handler();
@@ -31,13 +29,13 @@ public class MainActivity extends Activity {
         public void run() {
             textViewOutput.setText(kahlaService.toString());
             stopButtonsContainer.removeAllViews();
-            for (final KahlaWebSocketClient kahlaWebSocketClient : kahlaService.getKahlaWebSocketClients()) {
+            for (final KahlaChannel kahlaChannel : kahlaService.getKahlaChannels()) {
                 Button button = new Button(MainActivity.this);
-                button.setText("退出 " + kahlaWebSocketClient.tag);
+                button.setText("退出 " + kahlaChannel.getTitle());
                 button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        kahlaWebSocketClient.stop();
+                        kahlaChannel.stop();
                     }
                 });
                 stopButtonsContainer.addView(button);
@@ -52,7 +50,7 @@ public class MainActivity extends Activity {
             handler.post(runnableUpdateStopButtons);
             kahlaService.setOnClientChangedListener(new KahlaService.OnClientChangedListener() {
                 @Override
-                public void onClientChanged(List<KahlaWebSocketClient> kahlaWebSocketClients) {
+                public void onClientChanged() {
                     handler.post(runnableUpdateStopButtons);
                 }
             });
@@ -173,7 +171,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
         if (serviceConnection != null) {
-            if (kahlaService.getKahlaWebSocketClients().size() <= 0) {
+            if (kahlaService.getKahlaChannels().size() <= 0) {
                 stopService(new Intent(this, KahlaService.class));
             }
             unbindService(serviceConnection);
