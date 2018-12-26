@@ -63,7 +63,7 @@ public class KahlaWebSocketClient {
                     String senderEmail = jsonObject.getJSONObject("sender").getString("email");
                     byte[] bytes = CryptoJs.aesDecrypt(content, aesKey);
                     content = new String(bytes, "UTF-8");
-                    onDecryptedMessageListener.onDecryptedMessage(content, senderNickname, senderEmail, webSocket, text);
+                    onDecryptedMessageListener.onDecryptedMessage(content, senderNickname, senderEmail, webSocket, jsonObject);
                 } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException e) {
                     e.printStackTrace();
                 }
@@ -184,7 +184,7 @@ public class KahlaWebSocketClient {
     }
 
     public interface OnDecryptedMessageListener {
-        void onDecryptedMessage(String content, String senderNickName, String senderEmail, WebSocket webSocket, String originalText);
+        void onDecryptedMessage(String content, String senderNickName, String senderEmail, WebSocket webSocket, JSONObject jsonObject);
     }
 
     public interface OnClosedListener {

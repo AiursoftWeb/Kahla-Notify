@@ -27,7 +27,8 @@ public class MainActivity extends Activity {
     private Runnable runnableUpdateStopButtons = new Runnable() {
         @Override
         public void run() {
-            textViewOutput.setText(kahlaService.toString());
+            String output = kahlaService.toString() + "\n" + kahlaService.messagesToString();
+            textViewOutput.setText(output);
             stopButtonsContainer.removeAllViews();
             for (final KahlaChannel kahlaChannel : kahlaService.getKahlaChannels()) {
                 Button button = new Button(MainActivity.this);

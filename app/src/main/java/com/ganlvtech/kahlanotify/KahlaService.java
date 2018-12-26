@@ -16,6 +16,8 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +30,7 @@ public class KahlaService extends Service {
     private IBinder binder = new ServiceBinder();
     private Handler handler = new Handler();
     private List<KahlaChannel> kahlaChannels = new ArrayList<>();
+    private List<KahlaMessage> kahlaMessages = new ArrayList<>();
     private OnClientChangedListener onClientChangedListener = null;
 
     @Override
@@ -129,11 +132,13 @@ public class KahlaService extends Service {
         });
         kahlaChannel.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
             @Override
-            public void onDecryptedMessage(final String content, final String senderNickName, String senderEmail, WebSocket webSocket, String originalText) {
+            public void onDecryptedMessage(final String content, final String senderNickName, String senderEmail, WebSocket webSocket, final JSONObject jsonObject) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        KahlaService.this.notify(content, senderNickName + " [" + title + "]");
+                        String title1 = senderNickName + " [" + title + "]";
+                        kahlaMessages.add(new KahlaMessage(title1, content, jsonObject));
+                        KahlaService.this.notify(content, title1);
                     }
                 });
             }
@@ -248,12 +253,26 @@ public class KahlaService extends Service {
         return stringBuilder.toString();
     }
 
+    public String messagesToString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = kahlaMessages.size() - 1; i >= 0; i--) {
+            KahlaMessage kahlaMessage = kahlaMessages.get(i);
+            stringBuilder.append(kahlaMessage.toString());
+            stringBuilder.append("\n");
+        }
+        return stringBuilder.toString();
+    }
+
     public void setOnClientChangedListener(OnClientChangedListener onClientChangedListener) {
         this.onClientChangedListener = onClientChangedListener;
     }
 
     public List<KahlaChannel> getKahlaChannels() {
         return kahlaChannels;
+    }
+
+    public List<KahlaMessage> getKahlaMessages() {
+        return kahlaMessages;
     }
 
     public interface OnClientChangedListener {
