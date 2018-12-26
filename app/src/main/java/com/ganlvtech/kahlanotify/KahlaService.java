@@ -2,6 +2,7 @@ package com.ganlvtech.kahlanotify;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -52,10 +53,18 @@ public class KahlaService extends Service {
         Context context = this;
         NotificationManager notifyManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         final long[] DEFAULT_VIBRATE_PATTERN = {0, 250, 250, 250};
+        Intent notifyIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                notifyIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
         Notification notification = new Notification.Builder(context)
                 .setSmallIcon(android.R.drawable.sym_def_app_icon)
                 .setContentTitle(title)
                 .setContentText(str)
+                .setContentIntent(pendingIntent)
                 .setStyle(new Notification.BigTextStyle().bigText(str))
                 .setLights(Color.CYAN, 1000, 1000)
                 .setVibrate(DEFAULT_VIBRATE_PATTERN)
