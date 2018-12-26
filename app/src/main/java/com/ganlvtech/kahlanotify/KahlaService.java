@@ -78,6 +78,7 @@ public class KahlaService extends Service {
                 .setSmallIcon(android.R.drawable.sym_def_app_icon)
                 .setContentTitle(title)
                 .setContentText(str)
+                .setStyle(new Notification.BigTextStyle().bigText(str))
                 .setLights(Color.CYAN, 1000, 1000)
                 .setVibrate(DEFAULT_VIBRATE_PATTERN)
                 .setSound(Settings.System.DEFAULT_NOTIFICATION_URI)
