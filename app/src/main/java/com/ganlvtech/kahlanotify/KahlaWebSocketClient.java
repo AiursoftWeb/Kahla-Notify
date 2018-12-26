@@ -20,12 +20,18 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
 public class KahlaWebSocketClient {
+    public static final int STATE_NEW = 0;
+    public static final int STATE_OPEN = 1;
+    public static final int STATE_RETRY = 2;
+    public static final int STATE_STOP = 3;
+    private static OkHttpClient client;
     public String tag;
-    private OkHttpClient client;
+    private int state;
     private Request request;
     private WebSocket webSocket;
     private boolean autoRetry;
     private int retryInterval;
+    private int retryCount;
     private OnOpenListener onOpenListener = null;
     private OnMessageListener onMessageListener = null;
     private OnDecryptedMessageListener onDecryptedMessageListener = null;
@@ -35,10 +41,12 @@ public class KahlaWebSocketClient {
     private WebSocketListener webSocketListener = new WebSocketListener() {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
+            state = STATE_OPEN;
+            retryInterval = 0;
+            retryCount = 0;
             if (onOpenListener != null) {
                 onOpenListener.onOpen(webSocket, response);
             }
-            retryInterval = 0;
         }
 
         @Override
@@ -80,14 +88,29 @@ public class KahlaWebSocketClient {
     };
 
     public KahlaWebSocketClient(String url) {
+        if (client == null) {
+            client = new OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .build();
+        }
         tag = url;
+        state = STATE_NEW;
         autoRetry = true;
-        client = new OkHttpClient.Builder()
-                .readTimeout(10, TimeUnit.SECONDS)
-                .build();
         request = new Request.Builder()
                 .url(url)
                 .build();
+    }
+
+    public boolean isAutoRetry() {
+        return autoRetry;
+    }
+
+    public int getState() {
+        return state;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
     }
 
     public void setOnOpenListener(OnOpenListener onOpenListener) {
@@ -121,13 +144,14 @@ public class KahlaWebSocketClient {
     public void stop() {
         autoRetry = false;
         if (webSocket != null) {
-            webSocket.cancel();
+            webSocket.close(1000, null);
             webSocket = null;
         }
     }
 
     private void retry(WebSocket webSocket) {
         if (autoRetry) {
+            state = STATE_RETRY;
             new Thread() {
                 @Override
                 public void run() {
@@ -136,18 +160,15 @@ public class KahlaWebSocketClient {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    connect();
-                    if (retryInterval <= 0) {
+                    if (retryInterval < 10) {
                         retryInterval += 1;
-                    } else {
-                        retryInterval *= 2;
-                        if (retryInterval > 600) {
-                            retryInterval = 600;
-                        }
                     }
+                    retryCount++;
+                    connect();
                 }
             }.start();
         } else {
+            state = STATE_STOP;
             if (onStopListener != null) {
                 onStopListener.onStop(webSocket);
             }

@@ -4,9 +4,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
-import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -24,8 +20,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class KahlaWebApiClient {
-    private String baseUrl;
     private OkHttpClient client;
+    private String baseUrl;
 
     public KahlaWebApiClient(String baseUrl) {
         this.baseUrl = baseUrl;
@@ -48,7 +44,7 @@ public class KahlaWebApiClient {
                 return cookiesList != null ? cookiesList : new ArrayList<Cookie>();
             }
         };
-        this.client = new OkHttpClient.Builder()
+        client = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .cookieJar(cookieJar)
                 .build();

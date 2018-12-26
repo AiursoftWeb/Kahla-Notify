@@ -25,9 +25,11 @@ public class MainActivity extends Activity {
     private LinearLayout stopButtonsContainer;
     private Handler handler = new Handler();
     private KahlaService kahlaService = null;
+    private TextView textViewOutput;
     private Runnable runnableUpdateStopButtons = new Runnable() {
         @Override
         public void run() {
+            textViewOutput.setText(kahlaService.toString());
             stopButtonsContainer.removeAllViews();
             for (final KahlaWebSocketClient kahlaWebSocketClient : kahlaService.getKahlaWebSocketClients()) {
                 Button button = new Button(MainActivity.this);
@@ -77,6 +79,7 @@ public class MainActivity extends Activity {
         final CheckBox checkBoxWakeScreen = new CheckBox(this);
         stopButtonsContainer = new LinearLayout(this);
         Button buttonForceExit = new Button(this);
+        textViewOutput = new TextView(this);
 
         final SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
         String username = sharedPreferences.getString("username", "");
@@ -107,6 +110,7 @@ public class MainActivity extends Activity {
         container.addView(checkBoxWakeScreen);
         container.addView(stopButtonsContainer);
         container.addView(buttonForceExit);
+        container.addView(textViewOutput);
         view.addView(container);
 
         checkBoxWakeScreen.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {

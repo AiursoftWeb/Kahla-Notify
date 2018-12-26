@@ -40,17 +40,6 @@ public class KahlaService extends Service {
         this.onClientChangedListener = onClientChangedListener;
     }
 
-    public void clientChanged() {
-        if (onClientChangedListener != null) {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    onClientChangedListener.onClientChanged(kahlaWebSocketClients);
-                }
-            });
-        }
-    }
-
     @Override
     public IBinder onBind(Intent intent) {
         return binder;
@@ -147,6 +136,7 @@ public class KahlaService extends Service {
                         toast("Connected", title);
                     }
                 });
+                clientChanged();
             }
         });
         kahlaWebSocketClient.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
@@ -164,18 +154,42 @@ public class KahlaService extends Service {
             @Override
             public void onClosed(WebSocket webSocket, int code, String reason) {
                 Log.d("KahlaWebSocketClient", "Closed");
+                if (kahlaWebSocketClient.isAutoRetry() && kahlaWebSocketClient.getRetryCount() <= 0) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            toast("Closed. Retry!", title);
+                        }
+                    });
+                }
+                clientChanged();
             }
         });
         kahlaWebSocketClient.setOnFailureListener(new KahlaWebSocketClient.OnFailureListener() {
             @Override
             public void onFailure(WebSocket webSocket, Throwable t, Response response) {
                 Log.d("KahlaWebSocketClient", "Failure");
+                if (kahlaWebSocketClient.isAutoRetry() && kahlaWebSocketClient.getRetryCount() <= 0) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            toast("Failure. Retry!", title);
+                        }
+                    });
+                }
+                clientChanged();
             }
         });
         kahlaWebSocketClient.setOnStopListener(new KahlaWebSocketClient.OnStopListener() {
             @Override
             public void onStop(WebSocket webSocket) {
                 Log.d("KahlaWebSocketClient", "Stopped");
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        toast("Stopped", title);
+                    }
+                });
                 kahlaWebSocketClients.remove(kahlaWebSocketClient);
                 clientChanged();
             }
@@ -183,6 +197,45 @@ public class KahlaService extends Service {
         kahlaWebSocketClient.connect();
         kahlaWebSocketClients.add(kahlaWebSocketClient);
         clientChanged();
+    }
+
+    private void clientChanged() {
+        if (onClientChangedListener != null) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    onClientChangedListener.onClientChanged(kahlaWebSocketClients);
+                }
+            });
+        }
+    }
+
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (KahlaWebSocketClient kahlaWebSocketClient : kahlaWebSocketClients) {
+            stringBuilder.append(kahlaWebSocketClient.tag);
+            String state;
+            switch (kahlaWebSocketClient.getState()) {
+                case KahlaWebSocketClient.STATE_NEW:
+                    state = "连接中";
+                    break;
+                case KahlaWebSocketClient.STATE_OPEN:
+                    state = "连接成功";
+                    break;
+                case KahlaWebSocketClient.STATE_RETRY:
+                    state = "重连中（第 " + kahlaWebSocketClient.getRetryCount() + " 次重试）";
+                    break;
+                case KahlaWebSocketClient.STATE_STOP:
+                    state = "退出";
+                    break;
+                default:
+                    state = "Unknown state";
+            }
+            stringBuilder.append(": ");
+            stringBuilder.append(state);
+            stringBuilder.append("\n");
+        }
+        return stringBuilder.toString();
     }
 
     public void stopAllKahlaWebSocketClients() {
