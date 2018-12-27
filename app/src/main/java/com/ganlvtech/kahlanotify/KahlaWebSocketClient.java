@@ -48,6 +48,19 @@ public class KahlaWebSocketClient {
             if (onOpenListener != null) {
                 onOpenListener.onOpen(webSocket, response);
             }
+            new Thread() {
+                @Override
+                public void run() {
+                    while (KahlaWebSocketClient.this.state == STATE_OPEN) {
+                        KahlaWebSocketClient.this.webSocket.send("ping");
+                        try {
+                            Thread.sleep(60 * 1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }.start();
         }
 
         @Override
