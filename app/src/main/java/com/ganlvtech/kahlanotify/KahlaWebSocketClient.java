@@ -35,6 +35,7 @@ public class KahlaWebSocketClient {
     private OnOpenListener onOpenListener = null;
     private OnMessageListener onMessageListener = null;
     private OnDecryptedMessageListener onDecryptedMessageListener = null;
+    private OnClosingListener onClosingListener = null;
     private OnClosedListener onClosedListener = null;
     private OnStopListener onStopListener = null;
     private OnFailureListener onFailureListener = null;
@@ -57,16 +58,26 @@ public class KahlaWebSocketClient {
             if (onDecryptedMessageListener != null) {
                 try {
                     JSONObject jsonObject = new JSONObject(text);
-                    String aesKey = jsonObject.getString("aesKey");
-                    String content = jsonObject.getString("content");
-                    String senderNickname = jsonObject.getJSONObject("sender").getString("nickName");
-                    String senderEmail = jsonObject.getJSONObject("sender").getString("email");
-                    byte[] bytes = CryptoJs.aesDecrypt(content, aesKey);
-                    content = new String(bytes, "UTF-8");
-                    onDecryptedMessageListener.onDecryptedMessage(content, senderNickname, senderEmail, webSocket, jsonObject);
+                    int type = jsonObject.getInt("type");
+                    if (type == 0) {
+                        String aesKey = jsonObject.getString("aesKey");
+                        String content = jsonObject.getString("content");
+                        String senderNickname = jsonObject.getJSONObject("sender").getString("nickName");
+                        String senderEmail = jsonObject.getJSONObject("sender").getString("email");
+                        byte[] bytes = CryptoJs.aesDecrypt(content, aesKey);
+                        content = new String(bytes, "UTF-8");
+                        onDecryptedMessageListener.onDecryptedMessage(content, senderNickname, senderEmail, webSocket, jsonObject);
+                    }
                 } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException | UnsupportedEncodingException | IllegalBlockSizeException | BadPaddingException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+
+        @Override
+        public void onClosing(WebSocket webSocket, int code, String reason) {
+            if (onClosingListener != null) {
+                onClosingListener.onClosing(webSocket, code, reason);
             }
         }
 
@@ -163,6 +174,10 @@ public class KahlaWebSocketClient {
         this.onDecryptedMessageListener = onDecryptedMessageListener;
     }
 
+    public void setOnClosingListener(OnClosingListener onClosingListener) {
+        this.onClosingListener = onClosingListener;
+    }
+
     public void setOnClosedListener(OnClosedListener onClosedListener) {
         this.onClosedListener = onClosedListener;
     }
@@ -185,6 +200,10 @@ public class KahlaWebSocketClient {
 
     public interface OnDecryptedMessageListener {
         void onDecryptedMessage(String content, String senderNickName, String senderEmail, WebSocket webSocket, JSONObject jsonObject);
+    }
+
+    public interface OnClosingListener {
+        void onClosing(WebSocket webSocket, int code, String reason);
     }
 
     public interface OnClosedListener {

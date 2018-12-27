@@ -1,6 +1,7 @@
 package com.ganlvtech.kahlanotify;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -8,7 +9,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.media.AudioAttributes;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -16,22 +19,42 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import okhttp3.Response;
 import okhttp3.WebSocket;
 
 public class KahlaService extends Service {
+    public static final String CHANNEL_ID = "KAHLA_NOTIFY_CHANNEL";
+    public static final long[] VIBRATION_PATTERN = {0, 250, 250, 250};
     private final static AtomicInteger counter = new AtomicInteger(1);
     private IBinder binder = new ServiceBinder();
     private Handler handler = new Handler();
     private List<KahlaChannel> kahlaChannels = new ArrayList<>();
     private List<KahlaMessage> kahlaMessages = new ArrayList<>();
     private OnClientChangedListener onClientChangedListener = null;
+    private NotificationChannel notificationChannel = null;
+    private NotificationManager notificationManager = null;
+    private String log = "";
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -53,9 +76,10 @@ public class KahlaService extends Service {
     }
 
     private void notify(String str, String title) {
-        Context context = this;
-        NotificationManager notifyManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        final long[] DEFAULT_VIBRATE_PATTERN = {0, 250, 250, 250};
+        if (notificationManager == null) {
+            notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        }
+        Notification notification;
         Intent notifyIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -63,25 +87,50 @@ public class KahlaService extends Service {
                 notifyIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT
         );
-        Notification notification = new Notification.Builder(context)
-                .setSmallIcon(android.R.drawable.sym_def_app_icon)
-                .setContentTitle(title)
-                .setContentText(str)
-                .setContentIntent(pendingIntent)
-                .setStyle(new Notification.BigTextStyle().bigText(str))
-                .setLights(Color.CYAN, 1000, 1000)
-                .setVibrate(DEFAULT_VIBRATE_PATTERN)
-                .setSound(Settings.System.DEFAULT_NOTIFICATION_URI)
-                .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .setPriority(Notification.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .build();
-        notifyManager.notify(counter.getAndIncrement(), notification);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (notificationChannel == null) {
+                notificationChannel = new NotificationChannel(CHANNEL_ID, "Kahla Notify", NotificationManager.IMPORTANCE_DEFAULT);
+                notificationChannel.enableLights(true);
+                notificationChannel.setLightColor(Color.CYAN);
+                notificationChannel.enableVibration(true);
+                notificationChannel.setVibrationPattern(VIBRATION_PATTERN);
+                notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                notificationChannel.setSound(Settings.System.DEFAULT_NOTIFICATION_URI,
+                        new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .build());
+                notificationManager.createNotificationChannel(notificationChannel);
+            }
+            notification = new Notification.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(android.R.drawable.sym_def_app_icon)
+                    .setContentTitle(title)
+                    .setContentText(str)
+                    .setContentIntent(pendingIntent)
+                    .setStyle(new Notification.BigTextStyle().bigText(str))
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setChannelId(CHANNEL_ID)
+                    .setAutoCancel(true)
+                    .build();
+        } else {
+            notification = new Notification.Builder(this)
+                    .setSmallIcon(android.R.drawable.sym_def_app_icon)
+                    .setContentTitle(title)
+                    .setContentText(str)
+                    .setContentIntent(pendingIntent)
+                    .setStyle(new Notification.BigTextStyle().bigText(str))
+                    .setLights(Color.CYAN, 1000, 1000)
+                    .setVibrate(VIBRATION_PATTERN)
+                    .setSound(Settings.System.DEFAULT_NOTIFICATION_URI)
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setAutoCancel(true)
+                    .build();
+        }
+        notificationManager.notify(counter.getAndIncrement(), notification);
 
         final SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
         boolean wakeScreen = sharedPreferences.getBoolean("wakeScreen", true);
         if (wakeScreen) {
-            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
             if (!powerManager.isInteractive()) {
                 PowerManager.WakeLock wl = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "KAHLA_NOTIFY:SCREEN_LOCK");
                 wl.acquire(5000);
@@ -102,7 +151,7 @@ public class KahlaService extends Service {
                         toast("Login Failed", title);
                     }
                 });
-                clientChanged();
+                clientChanged("Login Failed", title);
             }
         });
         kahlaChannel.setOnGetWebSocketUrlFailedListener(new KahlaChannel.OnGetWebSocketUrlFailedListener() {
@@ -114,7 +163,7 @@ public class KahlaService extends Service {
                         toast("Get WebSocket URL Failed", title);
                     }
                 });
-                clientChanged();
+                clientChanged("Get WebSocket URL Failed", title);
             }
         });
         kahlaChannel.setOnOpenListener(new KahlaWebSocketClient.OnOpenListener() {
@@ -127,7 +176,33 @@ public class KahlaService extends Service {
                         toast("Connected", title);
                     }
                 });
-                clientChanged();
+                clientChanged("Connected", title);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            JSONArray myFriends = kahlaChannel.getKahlaWebApiClient().getMyFriends();
+                            for (int i = 0; i < myFriends.length(); i++) {
+                                JSONObject myFriend = myFriends.getJSONObject(i);
+                                int unReadAmount = myFriend.getInt("unReadAmount");
+                                if (unReadAmount > 0) {
+                                    String displayName = myFriend.getString("displayName");
+                                    String latestMessageDecrypted = myFriend.getString("latestMessageDecrypted");
+                                    final String title1 = displayName + " 的未读消息 [" + title + "]";
+                                    final String content = "[共 " + unReadAmount + " 条] " + latestMessageDecrypted;
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            KahlaService.this.notify(content, title1);
+                                        }
+                                    });
+                                }
+                            }
+                        } catch (IOException | JSONException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException | BadPaddingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }.start();
             }
         });
         kahlaChannel.setOnDecryptedMessageListener(new KahlaWebSocketClient.OnDecryptedMessageListener() {
@@ -143,6 +218,12 @@ public class KahlaService extends Service {
                 });
             }
         });
+        kahlaChannel.setOnClosingListener(new KahlaWebSocketClient.OnClosingListener() {
+            @Override
+            public void onClosing(WebSocket webSocket, int code, String reason) {
+                clientChanged("Closing! Code: " + code + ". Reason: " + reason + ".", title);
+            }
+        });
         kahlaChannel.setOnClosedListener(new KahlaWebSocketClient.OnClosedListener() {
             @Override
             public void onClosed(WebSocket webSocket, int code, String reason) {
@@ -155,7 +236,7 @@ public class KahlaService extends Service {
                         }
                     });
                 }
-                clientChanged();
+                clientChanged("Closed. Retry!", title);
             }
         });
         kahlaChannel.setOnFailureListener(new KahlaWebSocketClient.OnFailureListener() {
@@ -170,7 +251,7 @@ public class KahlaService extends Service {
                         }
                     });
                 }
-                clientChanged();
+                clientChanged("Failure. Retry!", title);
             }
         });
         kahlaChannel.setOnStopListener(new KahlaWebSocketClient.OnStopListener() {
@@ -184,21 +265,22 @@ public class KahlaService extends Service {
                     }
                 });
                 kahlaChannels.remove(kahlaChannel);
-                clientChanged();
+                clientChanged("Stopped", title);
             }
         });
         kahlaChannels.add(kahlaChannel);
-        clientChanged();
+        clientChanged("Created", title);
         new Thread() {
             @Override
             public void run() {
                 kahlaChannel.connect();
-                clientChanged();
+                clientChanged("Connecting", title);
             }
         }.start();
     }
 
-    private void clientChanged() {
+    private void clientChanged(String log, String title) {
+        this.log += title + ": " + log + "\n";
         if (onClientChangedListener != null) {
             handler.post(new Runnable() {
                 @Override
@@ -273,6 +355,10 @@ public class KahlaService extends Service {
 
     public List<KahlaMessage> getKahlaMessages() {
         return kahlaMessages;
+    }
+
+    public String getLog() {
+        return log;
     }
 
     public interface OnClientChangedListener {

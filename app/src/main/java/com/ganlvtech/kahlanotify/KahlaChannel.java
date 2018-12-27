@@ -21,6 +21,7 @@ public class KahlaChannel {
     private KahlaWebSocketClient.OnOpenListener onOpenListener = null;
     private KahlaWebSocketClient.OnMessageListener onMessageListener = null;
     private KahlaWebSocketClient.OnDecryptedMessageListener onDecryptedMessageListener = null;
+    private KahlaWebSocketClient.OnClosingListener onClosingListener = null;
     private KahlaWebSocketClient.OnClosedListener onClosedListener = null;
     private KahlaWebSocketClient.OnStopListener onStopListener = null;
     private KahlaWebSocketClient.OnFailureListener onFailureListener = null;
@@ -59,6 +60,7 @@ public class KahlaChannel {
             kahlaWebSocketClient.setOnOpenListener(onOpenListener);
             kahlaWebSocketClient.setOnMessageListener(onMessageListener);
             kahlaWebSocketClient.setOnDecryptedMessageListener(onDecryptedMessageListener);
+            kahlaWebSocketClient.setOnClosingListener(onClosingListener);
             kahlaWebSocketClient.setOnClosedListener(onClosedListener);
             kahlaWebSocketClient.setOnStopListener(onStopListener);
             kahlaWebSocketClient.setOnFailureListener(onFailureListener);
@@ -80,6 +82,10 @@ public class KahlaChannel {
 
     public int getState() {
         return state;
+    }
+
+    public KahlaWebApiClient getKahlaWebApiClient() {
+        return kahlaWebApiClient;
     }
 
     public KahlaWebSocketClient getKahlaWebSocketClient() {
@@ -104,6 +110,10 @@ public class KahlaChannel {
 
     public void setOnDecryptedMessageListener(KahlaWebSocketClient.OnDecryptedMessageListener onDecryptedMessageListener) {
         this.onDecryptedMessageListener = onDecryptedMessageListener;
+    }
+
+    public void setOnClosingListener(KahlaWebSocketClient.OnClosingListener onClosingListener) {
+        this.onClosingListener = onClosingListener;
     }
 
     public void setOnClosedListener(KahlaWebSocketClient.OnClosedListener onClosedListener) {
