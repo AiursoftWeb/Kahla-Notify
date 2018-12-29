@@ -49,7 +49,6 @@ public class KahlaService extends Service {
     private OnClientChangedListener onClientChangedListener = null;
     private NotificationChannel notificationChannel = null;
     private NotificationManager notificationManager = null;
-    private String log = "";
 
     @Override
     public void onCreate() {
@@ -151,7 +150,7 @@ public class KahlaService extends Service {
                         toast("Login Failed", title);
                     }
                 });
-                clientChanged("Login Failed", title);
+                clientChanged();
             }
         });
         kahlaChannel.setOnGetWebSocketUrlFailedListener(new KahlaChannel.OnGetWebSocketUrlFailedListener() {
@@ -163,7 +162,7 @@ public class KahlaService extends Service {
                         toast("Get WebSocket URL Failed", title);
                     }
                 });
-                clientChanged("Get WebSocket URL Failed", title);
+                clientChanged();
             }
         });
         kahlaChannel.setOnOpenListener(new KahlaWebSocketClient.OnOpenListener() {
@@ -176,7 +175,7 @@ public class KahlaService extends Service {
                         toast("Connected", title);
                     }
                 });
-                clientChanged("Connected", title);
+                clientChanged();
                 new Thread() {
                     @Override
                     public void run() {
@@ -221,7 +220,7 @@ public class KahlaService extends Service {
         kahlaChannel.setOnClosingListener(new KahlaWebSocketClient.OnClosingListener() {
             @Override
             public void onClosing(WebSocket webSocket, int code, String reason) {
-                clientChanged("Closing! Code: " + code + ". Reason: " + reason + ".", title);
+                clientChanged();
             }
         });
         kahlaChannel.setOnClosedListener(new KahlaWebSocketClient.OnClosedListener() {
@@ -236,7 +235,7 @@ public class KahlaService extends Service {
                         }
                     });
                 }
-                clientChanged("Closed. Retry!", title);
+                clientChanged();
             }
         });
         kahlaChannel.setOnFailureListener(new KahlaWebSocketClient.OnFailureListener() {
@@ -251,7 +250,7 @@ public class KahlaService extends Service {
                         }
                     });
                 }
-                clientChanged("Failure. Retry!", title);
+                clientChanged();
             }
         });
         kahlaChannel.setOnStopListener(new KahlaWebSocketClient.OnStopListener() {
@@ -265,22 +264,21 @@ public class KahlaService extends Service {
                     }
                 });
                 kahlaChannels.remove(kahlaChannel);
-                clientChanged("Stopped", title);
+                clientChanged();
             }
         });
         kahlaChannels.add(kahlaChannel);
-        clientChanged("Created", title);
+        clientChanged();
         new Thread() {
             @Override
             public void run() {
                 kahlaChannel.connect();
-                clientChanged("Connecting", title);
+                clientChanged();
             }
         }.start();
     }
 
-    private void clientChanged(String log, String title) {
-        this.log += title + ": " + log + "\n";
+    private void clientChanged() {
         if (onClientChangedListener != null) {
             handler.post(new Runnable() {
                 @Override
@@ -355,10 +353,6 @@ public class KahlaService extends Service {
 
     public List<KahlaMessage> getKahlaMessages() {
         return kahlaMessages;
-    }
-
-    public String getLog() {
-        return log;
     }
 
     public interface OnClientChangedListener {
