@@ -126,7 +126,7 @@ public class KahlaService extends Service {
         }
         notificationManager.notify(counter.getAndIncrement(), notification);
 
-        final SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
         boolean wakeScreen = sharedPreferences.getBoolean("wakeScreen", true);
         if (wakeScreen) {
             PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
