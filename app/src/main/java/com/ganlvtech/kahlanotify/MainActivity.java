@@ -146,7 +146,7 @@ public class MainActivity extends Activity {
                     baseUrl = "https://server.kahla.app";
                     serverEnvironment = "Kahla";
                 }
-                String title = serverEnvironment + " | " + username;
+                String title = serverEnvironment;
                 kahlaService.addChannel(baseUrl, username, password, title);
             }
         });

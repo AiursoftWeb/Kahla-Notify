@@ -188,7 +188,7 @@ public class KahlaService extends Service {
                                     String displayName = myFriend.getString("displayName");
                                     String latestMessageDecrypted = myFriend.getString("latestMessageDecrypted");
                                     final String title1 = displayName + " 的未读消息 [" + title + "]";
-                                    final String content = "[共 " + unReadAmount + " 条] " + latestMessageDecrypted;
+                                    final String content = "[" + unReadAmount + " 条] " + latestMessageDecrypted;
                                     handler.post(new Runnable() {
                                         @Override
                                         public void run() {
@@ -335,8 +335,7 @@ public class KahlaService extends Service {
 
     public String messagesToString() {
         StringBuilder stringBuilder = new StringBuilder();
-        for (int i = kahlaMessages.size() - 1; i >= 0; i--) {
-            KahlaMessage kahlaMessage = kahlaMessages.get(i);
+        for (KahlaMessage kahlaMessage : kahlaMessages) {
             stringBuilder.append(kahlaMessage.toString());
             stringBuilder.append("\n");
         }
