@@ -96,7 +96,7 @@ public class KahlaService extends Service {
                 notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
                 notificationChannel.setSound(Settings.System.DEFAULT_NOTIFICATION_URI,
                         new AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                                 .build());
                 notificationManager.createNotificationChannel(notificationChannel);
             }
