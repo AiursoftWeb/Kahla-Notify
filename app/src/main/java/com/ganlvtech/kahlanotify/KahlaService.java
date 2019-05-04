@@ -19,6 +19,10 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.ganlvtech.kahlanotify.kahla.KahlaChannel;
+import com.ganlvtech.kahlanotify.kahla.KahlaMessage;
+import com.ganlvtech.kahlanotify.kahla.KahlaWebSocketClient;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,7 +83,7 @@ public class KahlaService extends Service {
             notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         }
         Notification notification;
-        Intent notifyIntent = new Intent(this, MainActivity.class);
+        Intent notifyIntent = new Intent(this, LegacyMainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
                 0,

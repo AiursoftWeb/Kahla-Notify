@@ -1,4 +1,4 @@
-package com.ganlvtech.kahlanotify;
+package com.ganlvtech.kahlanotify.kahla;
 
 import org.json.JSONException;
 import org.json.JSONObject;
