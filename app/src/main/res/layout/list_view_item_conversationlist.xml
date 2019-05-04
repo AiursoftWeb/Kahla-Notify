@@ -37,7 +37,7 @@
             <TextView
                 android:id="@+id/textViewContent"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="18sp"
                 android:text="Welcome to kahla server! View our wiki at: https://wiki.aiursoft.com"
                 android:textSize="12sp" />
         </LinearLayout>
