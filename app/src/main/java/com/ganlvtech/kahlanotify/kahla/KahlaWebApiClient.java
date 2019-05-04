@@ -31,6 +31,8 @@ import okhttp3.ResponseBody;
 public class KahlaWebApiClient {
     private OkHttpClient client;
     private String baseUrl;
+    private AuthService authService;
+    private FriendshipService friendshipService;
 
     public KahlaWebApiClient(String baseUrl) {
         this.baseUrl = baseUrl;
@@ -57,6 +59,20 @@ public class KahlaWebApiClient {
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .cookieJar(cookieJar)
                 .build();
+    }
+
+    public AuthService auth() {
+        if (authService == null) {
+            authService = new AuthService(client, baseUrl);
+        }
+        return authService;
+    }
+
+    public FriendshipService friendship() {
+        if (friendshipService == null) {
+            friendshipService = new FriendshipService(client, baseUrl);
+        }
+        return friendshipService;
     }
 
     public boolean Login(String username, String password) throws IOException, JSONException {

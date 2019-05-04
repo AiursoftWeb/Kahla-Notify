@@ -1,39 +1,59 @@
 package com.ganlvtech.kahlanotify;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.ListView;
 
 import com.ganlvtech.kahlanotify.components.ConversationListItemAdapter;
+import com.ganlvtech.kahlanotify.kahla.KahlaWebApiClient;
 import com.ganlvtech.kahlanotify.kahla.models.Conversation;
+import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 
 public class ConversationListActivity extends Activity {
+    private String baseUrl = "https://server.kahla.app";
     private ListView listView;
+    private String username;
+    private String password;
+    private KahlaWebApiClient client;
+    private List<Conversation> conversationList;
+    private Runnable updateConversationList = new Runnable() {
+        @Override
+        public void run() {
+            listView.setAdapter(new ConversationListItemAdapter(ConversationListActivity.this, conversationList));
+        }
+    };
+    private Handler handler;
+    private Runnable getConversationList = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                client.auth().AuthByPassword(username, password);
+                MyFriendsResponse myFriendsResponse = client.friendship().MyFriends();
+                conversationList = myFriendsResponse.items;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            handler.post(updateConversationList);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation_list);
+        SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
+        username = sharedPreferences.getString("username", "");
+        password = sharedPreferences.getString("password", "");
         listView = findViewById(R.id.listViewConversations);
-        List<Conversation> arrayList = new ArrayList<>();
-        Conversation conversation;
-        for (int i = 0; i < 10; i++) {
-            conversation = new Conversation();
-            conversation.displayName = "EdgeNeko";
-            conversation.displayImageKey = 4721;
-            conversation.latestMessage = "U2FsdGVkX1+opFA8RTzA4tqLLiO6NAPf5/Qg40RrURzgEJrl0ZYmUdK8ImhqqbB8";
-            conversation.aesKey = "407a9d96265f44b5995138494a997acd";
-            arrayList.add(conversation);
-            conversation = new Conversation();
-            conversation.displayName = "GanlvTech";
-            conversation.displayImageKey = 2611;
-            conversation.latestMessage = null;
-            conversation.aesKey = "cd4e759ee6894dfda0073c2d68cb89e5";
-            arrayList.add(conversation);
-        }
-        listView.setAdapter(new ConversationListItemAdapter(this, arrayList));
+        client = new KahlaWebApiClient(baseUrl);
+        handler = new Handler(Looper.getMainLooper());
+        new Thread(getConversationList).start();
     }
 }

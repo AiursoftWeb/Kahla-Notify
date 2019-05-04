@@ -13,15 +13,15 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public class Conversation {
+    public int conversationId;
+    public String userId;
     public String displayName;
     public int displayImageKey;
+    public String aesKey;
     public String latestMessage;
     public Date latestMessageTime;
     public int unReadAmount;
-    public int conversationId;
     public String discriminator;
-    public String userId;
-    public String aesKey;
     public boolean muted;
     public boolean someoneAtMe;
 
