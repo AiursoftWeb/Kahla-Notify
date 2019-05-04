@@ -158,8 +158,7 @@ public class LegacyMainActivity extends Activity {
             }
         });
 
-        // setContentView(view);
-        setContentView(R.layout.activity_main);
+        setContentView(view);
 
         startService(new Intent(this, KahlaService.class));
     }
