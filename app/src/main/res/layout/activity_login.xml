@@ -33,7 +33,7 @@
             android:text="Server Address" />
 
         <android.widget.AutoCompleteTextView
-            android:id="@+id/editTextServer"
+            android:id="@+id/autoCompleteTextViewServer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"></android.widget.AutoCompleteTextView>
 
@@ -59,6 +59,7 @@
             android:inputType="textPassword" />
 
         <Button
+            android:id="@+id/buttonLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Login" />

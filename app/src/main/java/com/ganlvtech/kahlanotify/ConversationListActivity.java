@@ -1,9 +1,7 @@
 package com.ganlvtech.kahlanotify;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -21,12 +19,12 @@ import java.io.IOException;
 import java.util.List;
 
 public class ConversationListActivity extends Activity {
-    private String baseUrl = "https://server.kahla.app";
+    private String server = "https://server.kahla.app";
     private ListView listViewConversations;
     private TextView textViewLegacy;
     private TextView textViewNewAccount;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private String username;
+    private String email;
     private String password;
     private KahlaWebApiClient client;
     private List<Conversation> conversationList;
@@ -44,7 +42,7 @@ public class ConversationListActivity extends Activity {
             try {
                 MyFriendsResponse myFriendsResponse = client.friendship().MyFriends();
                 if (myFriendsResponse.code != 0) {
-                    client.auth().AuthByPassword(username, password);
+                    client.auth().AuthByPassword(email, password);
                     myFriendsResponse = client.friendship().MyFriends();
                 }
                 conversationList = myFriendsResponse.items;
@@ -58,18 +56,13 @@ public class ConversationListActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_conversation_list);
-
         listViewConversations = findViewById(R.id.listViewConversations);
         textViewLegacy = findViewById(R.id.textViewLegacy);
         textViewNewAccount = findViewById(R.id.textViewNewAccount);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
-        SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
-        username = sharedPreferences.getString("username", "");
-        password = sharedPreferences.getString("password", "");
-        client = new KahlaWebApiClient(baseUrl);
+        client = new KahlaWebApiClient(server);
         handler = new Handler(Looper.getMainLooper());
 
         textViewLegacy.setOnClickListener(new View.OnClickListener() {
@@ -94,6 +87,13 @@ public class ConversationListActivity extends Activity {
                 refresh();
             }
         });
+
+        Bundle bundle = this.getIntent().getExtras();
+        if (bundle != null) {
+            server = bundle.getString("server");
+            email = bundle.getString("email");
+            password = bundle.getString("password");
+        }
         refresh();
     }
 
