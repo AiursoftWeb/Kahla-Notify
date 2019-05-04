@@ -7,7 +7,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 public class MainActivity extends Activity {
-    private Handler mHandler;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,8 +20,8 @@ public class MainActivity extends Activity {
         // Intent intent = new Intent(this, LoginActivity.class);
         // startActivity(intent);
 
-        mHandler = new Handler(Looper.getMainLooper());
-        mHandler.postDelayed(new Runnable() {
+        handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 startConversationListActivity();

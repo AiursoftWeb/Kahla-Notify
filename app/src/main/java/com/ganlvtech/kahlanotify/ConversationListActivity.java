@@ -24,6 +24,7 @@ public class ConversationListActivity extends Activity {
     private String baseUrl = "https://server.kahla.app";
     private ListView listViewConversations;
     private TextView textViewLegacy;
+    private TextView textViewNewAccount;
     private SwipeRefreshLayout swipeRefreshLayout;
     private String username;
     private String password;
@@ -62,6 +63,7 @@ public class ConversationListActivity extends Activity {
 
         listViewConversations = findViewById(R.id.listViewConversations);
         textViewLegacy = findViewById(R.id.textViewLegacy);
+        textViewNewAccount = findViewById(R.id.textViewNewAccount);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         SharedPreferences sharedPreferences = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
@@ -74,6 +76,14 @@ public class ConversationListActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(ConversationListActivity.this, LegacyMainActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        textViewNewAccount.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ConversationListActivity.this, LoginActivity.class);
                 startActivity(intent);
             }
         });

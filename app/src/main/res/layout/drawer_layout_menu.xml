@@ -58,6 +58,15 @@
         android:padding="16dp"
         android:text="Legacy Main Activity" />
 
+
+    <TextView
+        android:id="@+id/textViewNewAccount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#adceff"
+        android:padding="16dp"
+        android:text="Add New Nccount" />
+
     <ListView
         android:id="@+id/id_draw_menu_item_list_select"
         android:layout_width="match_parent"
