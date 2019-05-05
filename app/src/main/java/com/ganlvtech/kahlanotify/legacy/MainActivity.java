@@ -1,4 +1,4 @@
-package com.ganlvtech.kahlanotify;
+package com.ganlvtech.kahlanotify.legacy;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -19,9 +19,9 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.ganlvtech.kahlanotify.kahla.KahlaChannel;
+import com.ganlvtech.kahlanotify.KahlaService;
 
-public class LegacyMainActivity extends Activity {
+public class MainActivity extends Activity {
     private LinearLayout stopButtonsContainer;
     private Handler handler = new Handler();
     private KahlaService kahlaService = null;
@@ -33,7 +33,7 @@ public class LegacyMainActivity extends Activity {
             textViewOutput.setText(output);
             stopButtonsContainer.removeAllViews();
             for (final KahlaChannel kahlaChannel : kahlaService.getKahlaChannels()) {
-                Button button = new Button(LegacyMainActivity.this);
+                Button button = new Button(MainActivity.this);
                 button.setText("退出 " + kahlaChannel.getTitle());
                 button.setOnClickListener(new View.OnClickListener() {
                     @Override

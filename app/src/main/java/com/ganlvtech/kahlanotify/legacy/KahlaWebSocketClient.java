@@ -1,4 +1,6 @@
-package com.ganlvtech.kahlanotify.kahla;
+package com.ganlvtech.kahlanotify.legacy;
+
+import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 
 import org.json.JSONException;
 import org.json.JSONObject;

@@ -1,4 +1,8 @@
-package com.ganlvtech.kahlanotify.kahla;
+package com.ganlvtech.kahlanotify.legacy;
+
+import com.ganlvtech.kahlanotify.kahla.AuthService;
+import com.ganlvtech.kahlanotify.kahla.FriendshipService;
+import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,6 +39,7 @@ public class KahlaWebApiClient {
     private FriendshipService friendshipService;
 
     public KahlaWebApiClient(String baseUrl) {
+        baseUrl = baseUrl.replaceAll("/+$", "");
         this.baseUrl = baseUrl;
         CookieJar cookieJar = new CookieJar() {
             private final Map<String, List<Cookie>> cookiesMap = new HashMap<String, List<Cookie>>();
