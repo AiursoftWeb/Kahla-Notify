@@ -1,7 +1,6 @@
 package com.ganlvtech.kahlanotify.kahla;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -16,16 +15,6 @@ public class OssService {
     public OssService(OkHttpClient client, String baseUrl) {
         this.client = client;
         this.baseUrl = baseUrl;
-    }
-
-    public OssService(OkHttpClient client) {
-        this(client, "https://oss.aiursoft.com");
-    }
-
-    public OssService() {
-        this(new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .build());
     }
 
     public String getDownloadFromKeyUrl(int headImgFileKey, int w, int h) {

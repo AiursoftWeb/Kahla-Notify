@@ -2,6 +2,7 @@ package com.ganlvtech.kahlanotify.kahla;
 
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.InitPusherResponse;
+import com.ganlvtech.kahlanotify.kahla.responses.auth.VersionResponse;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,9 +24,9 @@ public class AuthService {
         this.baseUrl = baseUrl;
     }
 
-    public AuthByPasswordResponse AuthByPassword(String username, String password) throws IOException {
+    public AuthByPasswordResponse AuthByPassword(String email, String password) throws IOException {
         RequestBody body = new MultipartBody.Builder()
-                .addFormDataPart("Email", username)
+                .addFormDataPart("Email", email)
                 .addFormDataPart("Password", password)
                 .setType(MultipartBody.FORM)
                 .build();
@@ -50,7 +51,7 @@ public class AuthService {
 
     public InitPusherResponse InitPusher() throws IOException {
         Request request = new Request.Builder()
-                .url(baseUrl + "/auth/InitPusher")
+                .url(baseUrl + "/Auth/InitPusher")
                 .build();
         Response response = client.newCall(request).execute();
         InitPusherResponse r = new InitPusherResponse();
@@ -64,6 +65,30 @@ public class AuthService {
                     r.channelId = jsonObject.getInt("channelId");
                     r.connectKey = jsonObject.getString("connectKey");
                     r.serverPath = jsonObject.getString("serverPath");
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return r;
+    }
+
+    public VersionResponse Version() throws IOException {
+        Request request = new Request.Builder()
+                .url(baseUrl + "/Auth/Version")
+                .build();
+        Response response = client.newCall(request).execute();
+        VersionResponse r = new VersionResponse();
+        r.code = -1;
+        if (response.body() != null) {
+            try {
+                JSONObject jsonObject = new JSONObject(response.body().string());
+                r.code = jsonObject.getInt("code");
+                r.message = jsonObject.getString("message");
+                if (r.code == 0) {
+                    r.latestVersion = jsonObject.optString("latestVersion");
+                    r.oldestSupportedVersion = jsonObject.optString("oldestSupportedVersion");
+                    r.downloadAddress = jsonObject.optString("downloadAddress");
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

@@ -8,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
@@ -50,11 +49,7 @@ public class FriendshipService {
                         item.displayImageKey = jsonArrayItem.getInt("displayImageKey");
                         item.aesKey = jsonArrayItem.getString("aesKey");
                         item.latestMessage = jsonArrayItem.isNull("latestMessage") ? null : jsonArrayItem.getString("latestMessage");
-                        try {
-                            item.latestMessageTime = parser.parse(jsonArrayItem.getString("latestMessageTime"));
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
+                        item.latestMessageTime = jsonArrayItem.optString("latestMessageTime");
                         item.unReadAmount = jsonArrayItem.getInt("unReadAmount");
                         item.discriminator = jsonArrayItem.getString("discriminator");
                         item.muted = jsonArrayItem.getBoolean("muted");

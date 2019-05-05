@@ -1,4 +1,4 @@
-package com.ganlvtech.kahlanotify.kahla;
+package com.ganlvtech.kahlanotify.kahla.lib;
 
 import android.util.Base64;
 
