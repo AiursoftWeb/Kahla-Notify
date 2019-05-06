@@ -31,10 +31,10 @@
             android:name=".ConversationListActivity"
             android:theme="@style/AppTheme" />
         <activity android:name=".ConversationActivity" />
-        <activity android:name=".LegacyMainActivity" />
+        <activity android:name=".legacy.MainActivity" />
 
         <service
-            android:name=".KahlaService"
+            android:name=".legacy.KahlaService"
             android:enabled="true"
             android:exported="false" />
         <service

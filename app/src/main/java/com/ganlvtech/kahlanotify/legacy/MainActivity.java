@@ -19,8 +19,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.ganlvtech.kahlanotify.KahlaService;
-
 public class MainActivity extends Activity {
     private LinearLayout stopButtonsContainer;
     private Handler handler = new Handler();
