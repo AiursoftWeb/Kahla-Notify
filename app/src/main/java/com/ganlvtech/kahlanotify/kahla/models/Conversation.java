@@ -1,5 +1,6 @@
 package com.ganlvtech.kahlanotify.kahla.models;
 
+import com.ganlvtech.kahlanotify.kahla.OssService;
 import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 import com.ganlvtech.kahlanotify.kahla.lib.DateParser;
 
@@ -7,8 +8,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -26,12 +27,13 @@ public class Conversation {
     public String discriminator;
     public boolean muted;
     public boolean someoneAtMe;
+    public List<Message> messageList;
 
     public Date getLatestMessageTime() {
         return DateParser.tryParse(latestMessageTime);
     }
 
-    public String getLatestMessage() {
+    public String getLatestMessageDecrypted() {
         if (latestMessage == null) {
             return "No message. Start talking now!";
         }
@@ -42,5 +44,13 @@ public class Conversation {
             e.printStackTrace();
             return "Message decode error: " + e.toString();
         }
+    }
+
+    public String getLatestMessageDecryptedSignleLine() {
+        return getLatestMessageDecrypted().replaceAll("\\s", " ");
+    }
+
+    public String getDisplayImageUrl(OssService ossService) {
+        return ossService.getDownloadFromKeyUrl(displayImageKey, 100, 100);
     }
 }

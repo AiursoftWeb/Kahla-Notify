@@ -1,7 +1,9 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import com.ganlvtech.kahlanotify.kahla.models.User;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.InitPusherResponse;
+import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.VersionResponse;
 
 import org.json.JSONException;
@@ -96,5 +98,41 @@ public class AuthService {
         }
         return r;
     }
+
+    public MeResponse Me() throws IOException {
+        Request request = new Request.Builder()
+                .url(baseUrl + "/Auth/Me")
+                .build();
+        Response response = client.newCall(request).execute();
+        MeResponse r = new MeResponse();
+        r.code = -1;
+        if (response.body() != null) {
+            try {
+                JSONObject jsonObject = new JSONObject(response.body().string());
+                r.code = jsonObject.getInt("code");
+                r.message = jsonObject.getString("message");
+                JSONObject jsonObjectValue = jsonObject.getJSONObject("value");
+                if (r.code == 0) {
+                    r.value = new User();
+                    r.value.accountCreateTime = jsonObjectValue.getString("accountCreateTime");
+                    r.value.bio = jsonObjectValue.isNull("bio") ? "" : jsonObjectValue.getString("bio");
+                    r.value.email = jsonObjectValue.getString("email");
+                    r.value.emailConfirmed = jsonObjectValue.getBoolean("emailConfirmed");
+                    r.value.enableEmailNotification = jsonObjectValue.getBoolean("enableEmailNotification");
+                    r.value.headImgFileKey = jsonObjectValue.getInt("headImgFileKey");
+                    r.value.id = jsonObjectValue.getString("id");
+                    r.value.makeEmailPublic = jsonObjectValue.getBoolean("makeEmailPublic");
+                    r.value.nickName = jsonObjectValue.getString("nickName");
+                    r.value.preferedLanguage = jsonObjectValue.getString("preferedLanguage");
+                    r.value.sex = jsonObjectValue.getString("sex");
+                    r.value.themeId = jsonObjectValue.getInt("themeId");
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return r;
+    }
+
 }
 

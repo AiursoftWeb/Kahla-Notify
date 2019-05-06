@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Kahla Notify</string>
     <string name="title_activity_log">Logs</string>
+    <string name="server_address">Server Address</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
 </resources>

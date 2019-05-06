@@ -10,15 +10,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.ganlvtech.kahlanotify.R;
-import com.ganlvtech.kahlanotify.kahla.OssService;
-import com.ganlvtech.kahlanotify.kahla.models.Conversation;
+import com.ganlvtech.kahlanotify.client.KahlaClient;
+import com.ganlvtech.kahlanotify.kahla.models.User;
 import com.squareup.picasso.Picasso;
 
-public class ConversationListItemAdapter extends ArrayAdapter {
-    public OssService ossService;
+import java.util.ArrayList;
 
-    public ConversationListItemAdapter(Context context) {
-        super(context, R.layout.list_view_item_icon_title_content);
+public class AccountListItemAdapter extends ArrayAdapter {
+    public AccountListItemAdapter(Context context) {
+        super(context, R.layout.list_view_item_icon_title_content, new ArrayList<KahlaClient>());
     }
 
     @NonNull
@@ -29,17 +29,20 @@ public class ConversationListItemAdapter extends ArrayAdapter {
         TextView textViewTitle = view.findViewById(R.id.textViewTitle);
         TextView textViewContent = view.findViewById(R.id.textViewContent);
 
-        Conversation conversation = (Conversation) getItem(position);
-        if (conversation != null) {
-            textViewTitle.setText(conversation.displayName);
-            textViewContent.setText(conversation.getLatestMessageDecryptedSignleLine());
-            if (ossService == null) {
+        KahlaClient kahlaClient = (KahlaClient) getItem(position);
+        if (kahlaClient != null) {
+            User user = kahlaClient.getUserInfo();
+            if (user == null) {
+                textViewTitle.setText(kahlaClient.email);
+                textViewContent.setText(kahlaClient.baseUrl);
                 Picasso.get()
                         .load(R.drawable.icon_default_avatar)
                         .into(imageViewIcon);
             } else {
+                textViewTitle.setText(user.nickName);
+                textViewContent.setText(kahlaClient.baseUrl);
                 Picasso.get()
-                        .load(conversation.getDisplayImageUrl(ossService))
+                        .load(user.getHeadImgFileUrl(kahlaClient.getApiClient().oss()))
                         .placeholder(R.drawable.icon_default_avatar)
                         .into(imageViewIcon);
             }

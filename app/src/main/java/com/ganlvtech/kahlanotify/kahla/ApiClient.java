@@ -12,6 +12,7 @@ public class ApiClient {
     private String baseUrl;
     private AuthService authService;
     private FriendshipService friendshipService;
+    private ConversationService conversationService;
     private OssService ossService;
     private String ossServiceBaseUrl;
 
@@ -41,6 +42,13 @@ public class ApiClient {
             friendshipService = new FriendshipService(client, baseUrl);
         }
         return friendshipService;
+    }
+
+    public ConversationService conversation() {
+        if (conversationService == null) {
+            conversationService = new ConversationService(client, baseUrl);
+        }
+        return conversationService;
     }
 
     public OssService oss() {

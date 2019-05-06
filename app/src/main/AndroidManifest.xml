@@ -37,6 +37,10 @@
             android:name=".KahlaService"
             android:enabled="true"
             android:exported="false" />
+        <service
+            android:name=".MyService"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>
