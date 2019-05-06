@@ -7,6 +7,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.ganlvtech.kahlanotify.client.KahlaClient;
+import com.ganlvtech.kahlanotify.util.AccountListSharedPreferences;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +20,41 @@ public class MyService extends Service {
         kahlaClientList.add(kahlaClient);
     }
 
+    public void removeKahlaClient(KahlaClient kahlaClient) {
+        kahlaClientList.remove(kahlaClient);
+    }
+
     public List<KahlaClient> getKahlaClientList() {
         return kahlaClientList;
+    }
+
+    public void loadConfig() {
+        AccountListSharedPreferences accountListSharedPreferences = new AccountListSharedPreferences(this);
+        accountListSharedPreferences.load();
+        for (AccountListSharedPreferences.Account account : accountListSharedPreferences.accountList) {
+            KahlaClient kahlaClient = new KahlaClient(account.server, account.email, account.password);
+            kahlaClient.start();
+            kahlaClientList.add(kahlaClient);
+        }
+    }
+
+    public void saveConfig() {
+        AccountListSharedPreferences accountListSharedPreferences = new AccountListSharedPreferences(this);
+        accountListSharedPreferences.accountList.clear();
+        for (KahlaClient kahlaClient : kahlaClientList) {
+            AccountListSharedPreferences.Account account = new AccountListSharedPreferences.Account();
+            account.server = kahlaClient.baseUrl;
+            account.email = kahlaClient.email;
+            account.password = kahlaClient.password;
+            accountListSharedPreferences.accountList.add(account);
+        }
+        accountListSharedPreferences.save();
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        loadConfig();
     }
 
     @Override

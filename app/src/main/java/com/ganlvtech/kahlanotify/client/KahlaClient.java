@@ -1,5 +1,7 @@
 package com.ganlvtech.kahlanotify.client;
 
+import android.os.Handler;
+
 import com.ganlvtech.kahlanotify.kahla.ApiClient;
 import com.ganlvtech.kahlanotify.kahla.models.Conversation;
 import com.ganlvtech.kahlanotify.kahla.models.User;
@@ -7,18 +9,29 @@ import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KahlaClient extends Thread {
+    public static final int MESSAGE_WHAT_AUTH_AUTH_BY_PASSWORD_RESPONSE = 1;
+    public static final int MESSAGE_WHAT_AUTH_ME_RESPONSE = 2;
+    public static final int MESSAGE_WHAT_FRIENDSHIP_GET_FRIENDS_RESPONSE = 3;
+    public static final int MESSAGE_WHAT_AUTH_AUTH_BY_PASSWORD_EXCEPTION = 1000 + MESSAGE_WHAT_AUTH_AUTH_BY_PASSWORD_RESPONSE;
+    public static final int MESSAGE_WHAT_AUTH_ME_EXCEPTION = 1000 + MESSAGE_WHAT_AUTH_ME_RESPONSE;
+    public static final int MESSAGE_WHAT_FRIENDSHIP_GET_FRIENDS_EXCEPTION = 1000 + MESSAGE_WHAT_FRIENDSHIP_GET_FRIENDS_RESPONSE;
     public String baseUrl;
     public String email;
     public String password;
-    private ApiClient apiClient;
-    // private KahlaWebSocketClient kahlaWebSocketClient;
-    private List<Conversation> conversationList;
-    private User userInfo;
+    public ApiClient apiClient;
+    public List<Conversation> conversationList;
+    public User userInfo;
+    public Handler mainThreadHandler;
+    public AuthByPasswordResponse authByPasswordResponse;
+    public MeResponse meResponse;
+    public MyFriendsResponse myFriendsResponse;
 
     public KahlaClient(String baseUrl, String email, String password) {
         this.baseUrl = baseUrl;
@@ -32,40 +45,36 @@ public class KahlaClient extends Thread {
         return apiClient;
     }
 
-    // public void login() {
-    //     try {
-    //         apiClient.auth().AuthByPassword(email, password);
-    //     } catch (IOException e) {
-    //         e.printStackTrace();
-    //     }
-    // }
-
-    public User getUserInfo() {
-        // if (userInfo == null) {
-        //     try {
-        //         MeResponse meResponse = apiClient.auth().Me();
-        //         if (meResponse.code == 0) {
-        //             userInfo = meResponse.value;
-        //         }
-        //     } catch (IOException e) {
-        //         e.printStackTrace();
-        //     }
-        // }
-        return userInfo;
+    private void authAuthByPassword() {
+        try {
+            authByPasswordResponse = apiClient.auth().AuthByPassword(email, password);
+            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_AUTH_AUTH_BY_PASSWORD_RESPONSE, authByPasswordResponse));
+        } catch (JSONException | IOException e) {
+            e.printStackTrace();
+            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_AUTH_AUTH_BY_PASSWORD_EXCEPTION, e));
+        }
     }
 
-    public List<Conversation> getConversationList() {
-        // if (conversationList == null) {
-        //     try {
-        //         MyFriendsResponse myFriendsResponse = apiClient.friendship().MyFriends();
-        //         if (myFriendsResponse.code == 0) {
-        //             conversationList = myFriendsResponse.items;
-        //         }
-        //     } catch (IOException e) {
-        //         e.printStackTrace();
-        //     }
-        // }
-        return conversationList;
+    public void authMe() {
+        try {
+            meResponse = apiClient.auth().Me();
+            userInfo = meResponse.value;
+            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_AUTH_ME_RESPONSE, meResponse));
+        } catch (IOException e) {
+            e.printStackTrace();
+            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_AUTH_ME_EXCEPTION, e));
+        }
+    }
+
+    public void friendshipMyFriends() {
+        try {
+            myFriendsResponse = apiClient.friendship().MyFriends();
+            conversationList = myFriendsResponse.items;
+            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FRIENDSHIP_GET_FRIENDS_RESPONSE, myFriendsResponse));
+        } catch (IOException e) {
+            e.printStackTrace();
+            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FRIENDSHIP_GET_FRIENDS_EXCEPTION, e));
+        }
     }
 
     // public Conversation getConversation(int conversationId) {
@@ -101,25 +110,39 @@ public class KahlaClient extends Thread {
     @Override
     public void run() {
         while (true) {
-            try {
-                AuthByPasswordResponse authByPasswordResponse = apiClient.auth().AuthByPassword(email, password);
-                if (authByPasswordResponse.code == 0) {
-                    MyFriendsResponse myFriendsResponse = apiClient.friendship().MyFriends();
-                    if (myFriendsResponse.code == 0) {
-                        conversationList = myFriendsResponse.items;
-                    }
-                    MeResponse meResponse = apiClient.auth().Me();
-                    if (meResponse.code == 0) {
-                        userInfo = meResponse.value;
-                    }
+            if (authByPasswordResponse == null || authByPasswordResponse.code != 0) {
+                authAuthByPassword();
+            }
+            if (authByPasswordResponse != null && authByPasswordResponse.code == 0) {
+                if (myFriendsResponse == null || myFriendsResponse.code != 0) {
+                    friendshipMyFriends();
+                }
+                if (meResponse == null || meResponse.code != 0) {
+                    authMe();
+                }
+                if (myFriendsResponse != null && myFriendsResponse.code == 0
+                        && meResponse != null && meResponse.code == 0) {
                     break;
                 }
-                // InitPusherResponse initPusherResponse = apiClient.auth().InitPusher();
-                // kahlaWebSocketClient = new KahlaWebSocketClient(initPusherResponse.serverPath);
-                // kahlaWebSocketClient.connect();
-            } catch (IOException e) {
+            }
+            try {
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            break;
         }
+    }
+
+    public void gracefulShutdown() {
+        // TODO
+    }
+
+    public int getUnreadCount() {
+        int unread = 0;
+        for (Conversation conversation : conversationList) {
+            unread += conversation.unReadAmount;
+        }
+        return unread;
     }
 }

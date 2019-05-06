@@ -26,7 +26,7 @@ public class AuthService {
         this.baseUrl = baseUrl;
     }
 
-    public AuthByPasswordResponse AuthByPassword(String email, String password) throws IOException {
+    public AuthByPasswordResponse AuthByPassword(String email, String password) throws IOException, JSONException {
         RequestBody body = new MultipartBody.Builder()
                 .addFormDataPart("Email", email)
                 .addFormDataPart("Password", password)
@@ -40,13 +40,9 @@ public class AuthService {
         AuthByPasswordResponse r = new AuthByPasswordResponse();
         r.code = -1;
         if (response.body() != null) {
-            try {
-                JSONObject jsonObject = new JSONObject(response.body().string());
-                r.code = jsonObject.getInt("code");
-                r.message = jsonObject.getString("message");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            JSONObject jsonObject = new JSONObject(response.body().string());
+            r.code = jsonObject.getInt("code");
+            r.message = jsonObject.getString("message");
         }
         return r;
     }
