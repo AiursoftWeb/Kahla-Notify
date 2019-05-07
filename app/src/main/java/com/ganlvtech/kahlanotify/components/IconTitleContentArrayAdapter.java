@@ -22,19 +22,19 @@ public class IconTitleContentArrayAdapter extends ArrayAdapter {
     }
 
     public IconTitleContentArrayAdapter(Context context, List objects) {
-        super(context, R.layout.list_view_item_icon_title_content, objects);
+        super(context, 0, objects);
     }
 
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_icon_title_content, null);
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.list_view_item_icon_title_content, parent, false);
         ImageView imageViewIcon = view.findViewById(R.id.imageViewIcon);
         TextView textViewTitle = view.findViewById(R.id.textViewTitle);
         TextView textViewContent = view.findViewById(R.id.textViewContent);
         TextView textViewUnreadCount = view.findViewById(R.id.textViewUnreadCount);
 
-        IconTitleContent item = (IconTitleContent) getIconTitleContentItem(position);
+        IconTitleContent item = getIconTitleContentItem(position);
         if (item != null) {
             Picasso.get()
                     .load(item.iconUrl)

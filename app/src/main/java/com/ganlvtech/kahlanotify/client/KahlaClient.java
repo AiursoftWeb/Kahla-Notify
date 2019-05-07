@@ -13,6 +13,7 @@ import com.ganlvtech.kahlanotify.kahla.models.Conversation;
 import com.ganlvtech.kahlanotify.kahla.models.User;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
+import com.ganlvtech.kahlanotify.kahla.responses.conversation.GetMessageResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 
 import org.json.JSONException;
@@ -33,6 +34,8 @@ public class KahlaClient {
     public static final int MESSAGE_WHAT_FETCH_CONVERSATION_LIST_RESPONSE = MESSAGE_WHAT_FETCH_CONVERSATION_LIST | MESSAGE_WHAT_RESPONSE;
     public static final int MESSAGE_WHAT_FETCH_CONVERSATION_LIST_EXCEPTION = MESSAGE_WHAT_FETCH_CONVERSATION_LIST | MESSAGE_WHAT_EXCEPTION;
     private static final int MESSAGE_WHAT_FETCH_CONVERSATION = MESSAGE_WHAT_FETCH_CONVERSATION_LIST + 1;
+    public static final int MESSAGE_WHAT_FETCH_CONVERSATION_RESPONSE = MESSAGE_WHAT_FETCH_CONVERSATION | MESSAGE_WHAT_RESPONSE;
+    public static final int MESSAGE_WHAT_FETCH_CONVERSATION_EXCEPTION = MESSAGE_WHAT_FETCH_CONVERSATION | MESSAGE_WHAT_EXCEPTION;
     private static final int MESSAGE_WHAT_MESSAGE_READ = 1 + MESSAGE_WHAT_FETCH_CONVERSATION;
     private static final int MESSAGE_WHAT_SEND_MESSAGE_READ = 1 + MESSAGE_WHAT_MESSAGE_READ;
 
@@ -48,9 +51,7 @@ public class KahlaClient {
     @Nullable
     public User userInfo;
     public Handler mainThreadHandler;
-    public AuthByPasswordResponse authByPasswordResponse;
-    public MeResponse meResponse;
-    public MyFriendsResponse myFriendsResponse;
+    private MyFriendsResponse myFriendsResponse;
     private HandlerThread handlerThread;
     private KahlaClientHandler kahlaClientHandler;
 
@@ -70,7 +71,7 @@ public class KahlaClient {
 
     private void login() {
         try {
-            authByPasswordResponse = apiClient.auth().AuthByPassword(email, password);
+            AuthByPasswordResponse authByPasswordResponse = apiClient.auth().AuthByPassword(email, password);
             mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_LOGIN_RESPONSE, authByPasswordResponse));
         } catch (JSONException | IOException e) {
             e.printStackTrace();
@@ -78,33 +79,58 @@ public class KahlaClient {
         }
     }
 
-    private void fetchUserInfo() {
+    private void fetchUserInfo(int retry) {
         try {
-            meResponse = apiClient.auth().Me();
+            MeResponse meResponse = apiClient.auth().Me();
             userInfo = meResponse.value;
             mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_USER_INFO_RESPONSE, meResponse));
-        } catch (IOException e) {
-            e.printStackTrace();
-            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_USER_INFO_EXCEPTION, e));
-        } catch (ResponseCodeHttpUnauthorizedException e) {
-            login();
-            fetchUserInfo();
+        } catch (IOException | ResponseCodeHttpUnauthorizedException e) {
+            if (retry > 0) {
+                login();
+                fetchUserInfo(retry - 1);
+            } else {
+                e.printStackTrace();
+                mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_USER_INFO_EXCEPTION, e));
+            }
         }
     }
 
-    private void fetchConversationList() {
+    private void fetchConversationList(int retry) {
         try {
             myFriendsResponse = apiClient.friendship().MyFriends();
             if (myFriendsResponse.code == 0) {
                 conversationList = myFriendsResponse.items;
             }
             mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_CONVERSATION_LIST_RESPONSE, myFriendsResponse));
-        } catch (IOException e) {
-            e.printStackTrace();
-            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_CONVERSATION_LIST_EXCEPTION, e));
-        } catch (ResponseCodeHttpUnauthorizedException e) {
-            login();
-            fetchConversationList();
+        } catch (IOException | ResponseCodeHttpUnauthorizedException e) {
+            if (retry > 0) {
+                login();
+                fetchConversationList(retry - 1);
+            } else {
+                e.printStackTrace();
+                mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_USER_INFO_EXCEPTION, e));
+            }
+        }
+    }
+
+    private void fetchConversation(int id, int retry) {
+        try {
+            GetMessageResponse getMessageResponse = apiClient.conversation().GetMessage(id);
+            if (getMessageResponse.code == 0) {
+                Conversation conversation = findConversationById(id);
+                if (conversation != null) {
+                    conversation.messageList = getMessageResponse.items;
+                }
+            }
+            mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_CONVERSATION_RESPONSE, getMessageResponse));
+        } catch (IOException | ResponseCodeHttpUnauthorizedException e) {
+            if (retry > 0) {
+                login();
+                fetchConversation(id, retry - 1);
+            } else {
+                e.printStackTrace();
+                mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(MESSAGE_WHAT_FETCH_USER_INFO_EXCEPTION, e));
+            }
         }
     }
 
@@ -120,6 +146,10 @@ public class KahlaClient {
         kahlaClientHandler.sendMessage(kahlaClientHandler.obtainMessage(MESSAGE_WHAT_FETCH_CONVERSATION_LIST));
     }
 
+    public void fetchConversationAsync(int id) {
+        kahlaClientHandler.sendMessage(kahlaClientHandler.obtainMessage(MESSAGE_WHAT_FETCH_CONVERSATION, id, 0));
+    }
+
     public boolean quitSafely() {
         return handlerThread.quitSafely();
     }
@@ -133,6 +163,15 @@ public class KahlaClient {
             unread += conversation.unReadAmount;
         }
         return unread;
+    }
+
+    public Conversation findConversationById(int id) {
+        for (Conversation conversation : conversationList) {
+            if (conversation.conversationId == id) {
+                return conversation;
+            }
+        }
+        return null;
     }
 
     class KahlaClientHandler extends Handler {
@@ -152,12 +191,13 @@ public class KahlaClient {
                     kahlaClient.login();
                     break;
                 case MESSAGE_WHAT_FETCH_USER_INFO:
-                    kahlaClient.fetchUserInfo();
+                    kahlaClient.fetchUserInfo(1);
                     break;
                 case MESSAGE_WHAT_FETCH_CONVERSATION_LIST:
-                    kahlaClient.fetchConversationList();
+                    kahlaClient.fetchConversationList(1);
                     break;
                 case MESSAGE_WHAT_FETCH_CONVERSATION:
+                    kahlaClient.fetchConversation(msg.arg1, 1);
                     break;
                 case MESSAGE_WHAT_MESSAGE_READ:
                     break;

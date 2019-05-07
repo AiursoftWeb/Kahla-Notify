@@ -1,5 +1,6 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
 import com.ganlvtech.kahlanotify.kahla.models.Message;
 import com.ganlvtech.kahlanotify.kahla.models.User;
 import com.ganlvtech.kahlanotify.kahla.responses.conversation.GetMessageResponse;
@@ -25,11 +26,11 @@ public class ConversationService {
         this.baseUrl = baseUrl;
     }
 
-    public GetMessageResponse GetMessage(int id) throws IOException {
+    public GetMessageResponse GetMessage(int id) throws IOException, ResponseCodeHttpUnauthorizedException {
         return GetMessage(id, -1, 15);
     }
 
-    public GetMessageResponse GetMessage(int id, int skipTill, int take) throws IOException {
+    public GetMessageResponse GetMessage(int id, int skipTill, int take) throws IOException, ResponseCodeHttpUnauthorizedException {
         HttpUrl url = HttpUrl.get(baseUrl).newBuilder()
                 .addPathSegments("/Conversation/GetMessage")
                 .addPathSegment(String.valueOf(id))
@@ -40,6 +41,9 @@ public class ConversationService {
                 .url(url)
                 .build();
         Response response = client.newCall(request).execute();
+        if (response.code() == 401) {
+            throw new ResponseCodeHttpUnauthorizedException();
+        }
         GetMessageResponse r = new GetMessageResponse();
         r.code = -1;
         if (response.body() != null) {
@@ -56,18 +60,18 @@ public class ConversationService {
                         item.conversationId = jsonArrayItem.getInt("conversationId");
                         item.id = jsonArrayItem.getInt("id");
                         item.senderId = jsonArrayItem.getString("senderId");
-                        JSONObject jsonArrayItemSender = jsonArrayItem.getJSONObject("sender");
-                        item.sender = new User();
-                        item.sender.accountCreateTime = jsonArrayItemSender.getString("accountCreateTime");
-                        item.sender.bio = jsonArrayItemSender.getString("bio");
-                        item.sender.email = jsonArrayItemSender.getString("email");
-                        item.sender.emailConfirmed = jsonArrayItemSender.getBoolean("emailConfirmed");
-                        item.sender.headImgFileKey = jsonArrayItemSender.getInt("headImgFileKey");
-                        item.sender.id = jsonArrayItemSender.getString("id");
-                        item.sender.makeEmailPublic = jsonArrayItemSender.getBoolean("makeEmailPublic");
-                        item.sender.nickName = jsonArrayItemSender.getString("nickName");
-                        item.sender.preferedLanguage = jsonArrayItemSender.getString("preferedLanguage");
-                        item.sender.sex = jsonArrayItemSender.getString("sex");
+                        // JSONObject jsonArrayItemSender = jsonArrayItem.getJSONObject("sender");
+                        // item.sender = new User();
+                        // item.sender.accountCreateTime = jsonArrayItemSender.getString("accountCreateTime");
+                        // item.sender.bio = jsonArrayItemSender.getString("bio");
+                        // item.sender.email = jsonArrayItemSender.getString("email");
+                        // item.sender.emailConfirmed = jsonArrayItemSender.getBoolean("emailConfirmed");
+                        // item.sender.headImgFileKey = jsonArrayItemSender.getInt("headImgFileKey");
+                        // item.sender.id = jsonArrayItemSender.getString("id");
+                        // item.sender.makeEmailPublic = jsonArrayItemSender.getBoolean("makeEmailPublic");
+                        // item.sender.nickName = jsonArrayItemSender.getString("nickName");
+                        // item.sender.preferedLanguage = jsonArrayItemSender.getString("preferedLanguage");
+                        // item.sender.sex = jsonArrayItemSender.getString("sex");
                         item.content = jsonArrayItem.getString("content");
                         item.read = jsonArrayItem.getBoolean("read");
                         item.sendTime = jsonArrayItem.getString("sendTime");

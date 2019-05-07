@@ -22,6 +22,7 @@ import android.widget.TextView;
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.components.AccountListItemAdapter;
 import com.ganlvtech.kahlanotify.components.ConversationListItemAdapter;
+import com.ganlvtech.kahlanotify.kahla.models.Conversation;
 import com.ganlvtech.kahlanotify.legacy.MainActivity;
 import com.ganlvtech.kahlanotify.util.ConversationListActivitySharedPreferences;
 
@@ -90,6 +91,14 @@ public class ConversationListActivity extends Activity {
         });
         conversationListItemAdapter = new ConversationListItemAdapter(ConversationListActivity.this);
         listViewConversations.setAdapter(conversationListItemAdapter);
+        listViewConversations.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Conversation conversation = (Conversation) conversationListItemAdapter.getItem(position);
+                assert conversation != null;
+                startConversationActivity(conversation.conversationId);
+            }
+        });
         accountListItemAdapter = new AccountListItemAdapter(ConversationListActivity.this);
         listViewAccounts.setAdapter(accountListItemAdapter);
         listViewAccounts.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -207,6 +216,12 @@ public class ConversationListActivity extends Activity {
         if (!isSecondAccount) {
             finish();
         }
+    }
+
+    private void startConversationActivity(int conversationId) {
+        Intent intent = new Intent(ConversationListActivity.this, ConversationActivity.class);
+        intent.putExtra("conversationId", conversationId);
+        startActivity(intent);
     }
 
     private void signOut(@NonNull final KahlaClient kahlaClient) {

@@ -53,10 +53,10 @@ public class AuthService {
                 .url(baseUrl + "/Auth/InitPusher")
                 .build();
         Response response = client.newCall(request).execute();
-        InitPusherResponse r = new InitPusherResponse();
         if (response.code() == 401) {
             throw new ResponseCodeHttpUnauthorizedException();
         }
+        InitPusherResponse r = new InitPusherResponse();
         r.code = -1;
         if (response.body() != null) {
             try {
@@ -104,10 +104,10 @@ public class AuthService {
                 .url(baseUrl + "/Auth/Me")
                 .build();
         Response response = client.newCall(request).execute();
-        MeResponse r = new MeResponse();
         if (response.code() == 401) {
             throw new ResponseCodeHttpUnauthorizedException();
         }
+        MeResponse r = new MeResponse();
         r.code = -1;
         if (response.body() != null) {
             try {
