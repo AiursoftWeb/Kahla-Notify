@@ -5,4 +5,8 @@
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="login">Login</string>
+    <string name="logging_in___">Logging in...</string>
+    <string name="https___">https://</string>
+    <string name="sign_in">Sign in</string>
+    <string name="server_and_email_already_exists">Server and email already exists.</string>
 </resources>

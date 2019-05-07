@@ -47,6 +47,15 @@ public class AccountListSharedPreferences {
         editor.apply();
     }
 
+    public boolean isExists(String server, String email) {
+        for (Account account : accountList) {
+            if (email.equals(account.email) && server.equals(account.server)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static class Account {
         public String server;
         public String email;

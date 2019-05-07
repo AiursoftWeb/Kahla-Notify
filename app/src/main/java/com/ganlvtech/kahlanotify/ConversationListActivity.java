@@ -23,7 +23,7 @@ import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.components.AccountListItemAdapter;
 import com.ganlvtech.kahlanotify.components.ConversationListItemAdapter;
 import com.ganlvtech.kahlanotify.legacy.MainActivity;
-import com.ganlvtech.kahlanotify.util.LastAccountSharedPreferences;
+import com.ganlvtech.kahlanotify.util.ConversationListActivitySharedPreferences;
 
 import java.util.List;
 
@@ -31,19 +31,21 @@ public class ConversationListActivity extends Activity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private ListView listViewConversations;
     private ListView listViewAccounts;
+    private TextView toolbalTextViewTitle;
+    private TextView toolbalTextViewSubtitle;
     private TextView textViewLegacy;
     private TextView textViewNewAccount;
     private MyService myService;
     private ConversationListItemAdapter conversationListItemAdapter;
     private AccountListItemAdapter accountListItemAdapter;
     private KahlaClient kahlaClient;
-    private MyHandler handler;
+    private ConversationListActivitySharedPreferences conversationListActivitySharedPreferences;
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyService.ServiceBinder serviceBinder = (MyService.ServiceBinder) service;
             myService = serviceBinder.getService();
-            loadKahlaClientList();
+            ConversationListActivity.this.onServiceConnected();
         }
 
         @Override
@@ -57,6 +59,8 @@ public class ConversationListActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation_list);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        toolbalTextViewTitle = findViewById(R.id.toolbalTextViewTitle);
+        toolbalTextViewSubtitle = findViewById(R.id.toolbalTextViewSubtitle);
         listViewConversations = findViewById(R.id.listViewConversations);
         listViewAccounts = findViewById(R.id.listViewAccounts);
         textViewLegacy = findViewById(R.id.textViewLegacy);
@@ -65,8 +69,9 @@ public class ConversationListActivity extends Activity {
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                // TODO
-                loadCurrentAccountConversationList();
+                if (kahlaClient != null) {
+                    kahlaClient.fetchConversationListAsync();
+                }
             }
         });
         textViewLegacy.setOnClickListener(new View.OnClickListener() {
@@ -91,19 +96,22 @@ public class ConversationListActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 kahlaClient = (KahlaClient) accountListItemAdapter.getItem(position);
-                loadCurrentAccountConversationList();
+                assert kahlaClient != null;
+                setCurrentKahlaClient(kahlaClient);
             }
         });
         listViewAccounts.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 kahlaClient = (KahlaClient) accountListItemAdapter.getItem(position);
+                assert kahlaClient != null;
                 signOut(kahlaClient);
                 return true;
             }
         });
 
-        handler = new MyHandler(Looper.getMainLooper(), this);
+        conversationListActivitySharedPreferences = new ConversationListActivitySharedPreferences(this);
+        conversationListActivitySharedPreferences.load();
     }
 
     @Override
@@ -119,33 +127,73 @@ public class ConversationListActivity extends Activity {
         super.onStop();
     }
 
-    private void loadKahlaClientList() {
+    private void onServiceConnected() {
+        updateKahlaClientList();
+        updateConversationList();
+        swipeRefreshLayout.setRefreshing(true);
+        List<KahlaClient> kahlaClientList = myService.getKahlaClientList();
+        for (KahlaClient kahlaClient : kahlaClientList) {
+            kahlaClient.fetchConversationListAsync();
+            kahlaClient.fetchUserInfoAsync();
+        }
+    }
+
+    private void updateKahlaClientList() {
         List<KahlaClient> kahlaClientList = myService.getKahlaClientList();
         if (kahlaClientList.isEmpty()) {
             startLoginActivity(false);
         } else {
             for (KahlaClient kahlaClient : kahlaClientList) {
-                kahlaClient.mainThreadHandler = handler;
+                kahlaClient.mainThreadHandler = new MyHandler(Looper.getMainLooper(), this, kahlaClient);
             }
             accountListItemAdapter.clear();
             accountListItemAdapter.addAll(kahlaClientList);
+            if (kahlaClient == null) {
+                kahlaClient = conversationListActivitySharedPreferences.findKahlaClient(kahlaClientList);
+                if (kahlaClient == null) {
+                    kahlaClient = kahlaClientList.get(0);
+                    conversationListActivitySharedPreferences.putKahlaClient(kahlaClient);
+                    conversationListActivitySharedPreferences.save();
+                }
+            }
         }
     }
 
-    private void loadCurrentAccountConversationList() {
-        loadKahlaClientList();
-        if (kahlaClient == null) {
-            List<KahlaClient> kahlaClientList = myService.getKahlaClientList();
-            if (!kahlaClientList.isEmpty()) {
-                kahlaClient = kahlaClientList.get(0);
-            }
-        }
-        if (kahlaClient != null) {
-            conversationListItemAdapter.ossService = kahlaClient.getApiClient().oss();
-            conversationListItemAdapter.clear();
-            conversationListItemAdapter.addAll(kahlaClient.conversationList);
+    private void updateConversationList() {
+        updateConversationList(kahlaClient);
+    }
+
+    private void updateConversationList(@NonNull KahlaClient kahlaClient) {
+        updateConversationList(kahlaClient, false);
+        if (this.kahlaClient == kahlaClient) {
             swipeRefreshLayout.setRefreshing(false);
         }
+    }
+
+    private void setCurrentKahlaClient(@NonNull KahlaClient kahlaClient) {
+        updateConversationList(kahlaClient, true);
+        conversationListActivitySharedPreferences.putKahlaClient(kahlaClient);
+        conversationListActivitySharedPreferences.save();
+    }
+
+    private void updateConversationList(@NonNull KahlaClient kahlaClient, boolean isSetCurrentKahlaClient) {
+        if (isSetCurrentKahlaClient) {
+            this.kahlaClient = kahlaClient;
+        } else if (this.kahlaClient != kahlaClient) {
+            return;
+        }
+        if (kahlaClient.userInfo != null) {
+            toolbalTextViewTitle.setText(kahlaClient.userInfo.nickName);
+        } else {
+            toolbalTextViewTitle.setText(kahlaClient.email);
+        }
+        toolbalTextViewSubtitle.setText(kahlaClient.baseUrl);
+        conversationListItemAdapter.ossService = kahlaClient.apiClient.oss();
+        conversationListItemAdapter.clear();
+        if (kahlaClient.conversationList != null) {
+            conversationListItemAdapter.addAll(kahlaClient.conversationList);
+        }
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     private void startLoginActivity(boolean isSecondAccount) {
@@ -168,9 +216,10 @@ public class ConversationListActivity extends Activity {
                 .setPositiveButton("Sign out", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        kahlaClient.gracefulShutdown();
+                        kahlaClient.quitSafely();
                         myService.removeKahlaClient(kahlaClient);
-                        loadCurrentAccountConversationList();
+                        updateKahlaClientList();
+                        updateConversationList();
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -178,25 +227,26 @@ public class ConversationListActivity extends Activity {
     }
 
     private static class MyHandler extends Handler {
-        private KahlaClient kahlaClient;
         private ConversationListActivity conversationListActivity;
+        private KahlaClient kahlaClient;
 
-        MyHandler(Looper looper, ConversationListActivity conversationListActivity) {
+        MyHandler(Looper looper, ConversationListActivity conversationListActivity, KahlaClient kahlaClient) {
             super(looper);
             this.conversationListActivity = conversationListActivity;
+            this.kahlaClient = kahlaClient;
         }
 
         @Override
         public void handleMessage(final Message msg) {
             switch (msg.what) {
-                case KahlaClient.MESSAGE_WHAT_AUTH_ME_RESPONSE:
-                    conversationListActivity.loadKahlaClientList();
+                case KahlaClient.MESSAGE_WHAT_FETCH_USER_INFO_RESPONSE:
+                    conversationListActivity.updateKahlaClientList();
+                    conversationListActivity.updateConversationList();
                     break;
-                case KahlaClient.MESSAGE_WHAT_FRIENDSHIP_GET_FRIENDS_RESPONSE:
-                    conversationListActivity.loadCurrentAccountConversationList();
+                case KahlaClient.MESSAGE_WHAT_FETCH_CONVERSATION_LIST_RESPONSE:
+                    conversationListActivity.updateKahlaClientList();
+                    conversationListActivity.updateConversationList(kahlaClient);
                     break;
-                default:
-                    // throw new AssertionError("Unknown handler message received: " + msg.what);
             }
         }
     }

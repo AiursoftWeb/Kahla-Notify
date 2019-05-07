@@ -1,5 +1,6 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
 import com.ganlvtech.kahlanotify.kahla.models.User;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.InitPusherResponse;
@@ -47,12 +48,15 @@ public class AuthService {
         return r;
     }
 
-    public InitPusherResponse InitPusher() throws IOException {
+    public InitPusherResponse InitPusher() throws IOException, ResponseCodeHttpUnauthorizedException {
         Request request = new Request.Builder()
                 .url(baseUrl + "/Auth/InitPusher")
                 .build();
         Response response = client.newCall(request).execute();
         InitPusherResponse r = new InitPusherResponse();
+        if (response.code() == 401) {
+            throw new ResponseCodeHttpUnauthorizedException();
+        }
         r.code = -1;
         if (response.body() != null) {
             try {
@@ -95,12 +99,15 @@ public class AuthService {
         return r;
     }
 
-    public MeResponse Me() throws IOException {
+    public MeResponse Me() throws IOException, ResponseCodeHttpUnauthorizedException {
         Request request = new Request.Builder()
                 .url(baseUrl + "/Auth/Me")
                 .build();
         Response response = client.newCall(request).execute();
         MeResponse r = new MeResponse();
+        if (response.code() == 401) {
+            throw new ResponseCodeHttpUnauthorizedException();
+        }
         r.code = -1;
         if (response.body() != null) {
             try {

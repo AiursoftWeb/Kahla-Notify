@@ -3,14 +3,14 @@ package com.ganlvtech.kahlanotify.util;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-public class LastAccountSharedPreferences {
+public class LoginActivitySharedPreferences {
     public static final String SHARED_PREFERENCES_NAME = "LastAccount";
     public String server;
     public String email;
     public String password;
     private SharedPreferences sharedPreferences;
 
-    public LastAccountSharedPreferences(Context context) {
+    public LoginActivitySharedPreferences(Context context) {
         this.sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 

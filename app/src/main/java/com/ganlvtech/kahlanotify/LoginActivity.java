@@ -11,7 +11,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.text.Editable;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -21,7 +20,7 @@ import android.widget.EditText;
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.util.AccountListSharedPreferences;
-import com.ganlvtech.kahlanotify.util.LastAccountSharedPreferences;
+import com.ganlvtech.kahlanotify.util.LoginActivitySharedPreferences;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +52,8 @@ public class LoginActivity extends Activity {
     private boolean isSecondAccount;
     private ArrayAdapter<String> autoCompleteTextViewServerArrayAdapter;
     private ArrayAdapter<String> autoCompleteTextViewEmailArrayAdapter;
+    private LoginActivitySharedPreferences loginActivitySharedPreferences;
+    private AccountListSharedPreferences accountListSharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +66,8 @@ public class LoginActivity extends Activity {
         editTextPassword = findViewById(R.id.editTextPassword);
         buttonLogin = findViewById(R.id.buttonLogin);
 
+        autoCompleteTextViewServerArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, new ArrayList<String>());
+        autoCompleteTextViewServer.setAdapter(autoCompleteTextViewServerArrayAdapter);
         autoCompleteTextViewServer.setThreshold(1);
         autoCompleteTextViewServer.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -77,12 +80,11 @@ public class LoginActivity extends Activity {
         autoCompleteTextViewServer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Editable editable = autoCompleteTextViewServer.getText();
-                if (editable.length() == 0 || "https://".startsWith(editable.toString())) {
-                    autoCompleteTextViewServer.showDropDown();
-                }
+                autoCompleteTextViewServer.showDropDown();
             }
         });
+        autoCompleteTextViewEmailArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, new ArrayList<String>());
+        autoCompleteTextViewEmail.setAdapter(autoCompleteTextViewEmailArrayAdapter);
         autoCompleteTextViewEmail.setThreshold(1);
         autoCompleteTextViewEmail.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -106,34 +108,30 @@ public class LoginActivity extends Activity {
             }
         });
 
-        List<String> autoCompleteTextViewServerArrayList = new ArrayList<>(Arrays.asList(KAHLA_SERVER));
-        autoCompleteTextViewServerArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, autoCompleteTextViewServerArrayList);
-        List<String> autoCompleteTextViewEmailArrayList = new ArrayList<String>();
-        autoCompleteTextViewEmailArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, autoCompleteTextViewEmailArrayList);
-
-        LastAccountSharedPreferences lastAccountSharedPreferences = new LastAccountSharedPreferences(this);
-        lastAccountSharedPreferences.load();
-        if (lastAccountSharedPreferences.server.length() == 0) {
-            autoCompleteTextViewServer.setText("https://");
+        loginActivitySharedPreferences = new LoginActivitySharedPreferences(this);
+        loginActivitySharedPreferences.load();
+        if (loginActivitySharedPreferences.server.length() == 0) {
+            autoCompleteTextViewServer.setText(getString(R.string.https___));
         } else {
-            autoCompleteTextViewServer.setText(lastAccountSharedPreferences.server);
+            autoCompleteTextViewServer.setText(loginActivitySharedPreferences.server);
         }
-        autoCompleteTextViewEmail.setText(lastAccountSharedPreferences.email);
-        editTextPassword.setText(lastAccountSharedPreferences.password);
+        autoCompleteTextViewEmail.setText(loginActivitySharedPreferences.email);
+        editTextPassword.setText(loginActivitySharedPreferences.password);
 
-        AccountListSharedPreferences accountListSharedPreferences = new AccountListSharedPreferences(this);
+        accountListSharedPreferences = new AccountListSharedPreferences(this);
         accountListSharedPreferences.load();
+        List<String> autoCompleteTextViewServerArrayList = new ArrayList<>(Arrays.asList(KAHLA_SERVER));
+        List<String> autoCompleteTextViewEmailArrayList = new ArrayList<>();
         for (AccountListSharedPreferences.Account account : accountListSharedPreferences.accountList) {
             if (!autoCompleteTextViewServerArrayList.contains(account.server)) {
-                autoCompleteTextViewServerArrayAdapter.add(account.server);
+                autoCompleteTextViewServerArrayList.add(account.server);
             }
             if (!autoCompleteTextViewEmailArrayList.contains(account.email)) {
-                autoCompleteTextViewEmailArrayAdapter.add(account.email);
+                autoCompleteTextViewEmailArrayList.add(account.email);
             }
         }
-
-        autoCompleteTextViewServer.setAdapter(autoCompleteTextViewServerArrayAdapter);
-        autoCompleteTextViewEmail.setAdapter(autoCompleteTextViewEmailArrayAdapter);
+        autoCompleteTextViewServerArrayAdapter.addAll(autoCompleteTextViewServerArrayList);
+        autoCompleteTextViewEmailArrayAdapter.addAll(autoCompleteTextViewEmailArrayList);
 
         isSecondAccount = getIntent().getBooleanExtra("isSecondAccount", false);
     }
@@ -155,26 +153,31 @@ public class LoginActivity extends Activity {
         String server = autoCompleteTextViewServer.getText().toString();
         String email = autoCompleteTextViewEmail.getText().toString();
         String password = editTextPassword.getText().toString();
-        LastAccountSharedPreferences lastAccountSharedPreferences = new LastAccountSharedPreferences(this);
-        lastAccountSharedPreferences.server = server;
-        lastAccountSharedPreferences.email = email;
-        lastAccountSharedPreferences.password = password;
-        lastAccountSharedPreferences.save();
+        if (accountListSharedPreferences.isExists(server, email)) {
+            loginFailed(getString(R.string.server_and_email_already_exists));
+        }
+        buttonLogin.setText(getString(R.string.logging_in___));
+        buttonLogin.setEnabled(false);
+        loginActivitySharedPreferences.server = server;
+        loginActivitySharedPreferences.email = email;
+        loginActivitySharedPreferences.password = password;
+        loginActivitySharedPreferences.save();
         KahlaClient kahlaClient = new KahlaClient(server, email, password);
         kahlaClient.mainThreadHandler = new MyHandler(Looper.getMainLooper(), this, kahlaClient);
-        kahlaClient.start();
+        kahlaClient.loginAsync();
     }
 
     private void loginFailed(String message) {
         new AlertDialog.Builder(this)
-                .setTitle("Sign in")
+                .setTitle(getString(R.string.sign_in))
                 .setMessage(message)
                 .show();
+        buttonLogin.setText(getString(R.string.login));
+        buttonLogin.setEnabled(true);
     }
 
     private void loginOK(KahlaClient kahlaClient) {
         myService.addKahlaClient(kahlaClient);
-        myService.saveConfig();
         startConversationListActivity();
     }
 
@@ -200,7 +203,7 @@ public class LoginActivity extends Activity {
         @Override
         public void handleMessage(final Message msg) {
             switch (msg.what) {
-                case KahlaClient.MESSAGE_WHAT_AUTH_AUTH_BY_PASSWORD_RESPONSE:
+                case KahlaClient.MESSAGE_WHAT_LOGIN_RESPONSE:
                     AuthByPasswordResponse authByPasswordResponse = (AuthByPasswordResponse) msg.obj;
                     if (authByPasswordResponse.code == 0) {
                         loginActivity.loginOK(kahlaClient);
@@ -208,11 +211,9 @@ public class LoginActivity extends Activity {
                         loginActivity.loginFailed(authByPasswordResponse.message);
                     }
                     break;
-                case KahlaClient.MESSAGE_WHAT_AUTH_AUTH_BY_PASSWORD_EXCEPTION:
+                case KahlaClient.MESSAGE_WHAT_LOGIN_EXCEPTION:
                     Exception e = (Exception) msg.obj;
                     loginActivity.loginFailed(e.toString());
-                default:
-                    // throw new AssertionError("Unknown handler message received: " + msg.what);
             }
         }
     }

@@ -42,7 +42,7 @@ public class ConversationActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation);
 
-        listViewConversations = findViewById(R.id.list_view_conversation);
+        listViewConversations = findViewById(R.id.listViewConversations);
 
         // listViewConversations.setAdapter(new ConversationItemAdapter(this, conversationList, apiClient.oss()));
 

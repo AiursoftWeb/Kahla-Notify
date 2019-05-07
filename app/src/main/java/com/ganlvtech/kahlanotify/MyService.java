@@ -18,27 +18,28 @@ public class MyService extends Service {
 
     public void addKahlaClient(KahlaClient kahlaClient) {
         kahlaClientList.add(kahlaClient);
+        saveConfig();
     }
 
     public void removeKahlaClient(KahlaClient kahlaClient) {
         kahlaClientList.remove(kahlaClient);
+        saveConfig();
     }
 
     public List<KahlaClient> getKahlaClientList() {
         return kahlaClientList;
     }
 
-    public void loadConfig() {
+    private void loadConfig() {
         AccountListSharedPreferences accountListSharedPreferences = new AccountListSharedPreferences(this);
         accountListSharedPreferences.load();
         for (AccountListSharedPreferences.Account account : accountListSharedPreferences.accountList) {
             KahlaClient kahlaClient = new KahlaClient(account.server, account.email, account.password);
-            kahlaClient.start();
             kahlaClientList.add(kahlaClient);
         }
     }
 
-    public void saveConfig() {
+    private void saveConfig() {
         AccountListSharedPreferences accountListSharedPreferences = new AccountListSharedPreferences(this);
         accountListSharedPreferences.accountList.clear();
         for (KahlaClient kahlaClient : kahlaClientList) {

@@ -1,5 +1,6 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
 import com.ganlvtech.kahlanotify.kahla.models.Conversation;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 
@@ -25,11 +26,14 @@ public class FriendshipService {
         this.baseUrl = baseUrl;
     }
 
-    public MyFriendsResponse MyFriends() throws IOException {
+    public MyFriendsResponse MyFriends() throws IOException, ResponseCodeHttpUnauthorizedException {
         Request request = new Request.Builder()
                 .url(baseUrl + "/friendship/MyFriends?orderByName=false")
                 .build();
         Response response = client.newCall(request).execute();
+        if (response.code() == 401) {
+            throw new ResponseCodeHttpUnauthorizedException();
+        }
         MyFriendsResponse r = new MyFriendsResponse();
         r.code = -1;
         if (response.body() != null) {
