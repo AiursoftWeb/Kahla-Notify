@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -21,6 +22,7 @@ import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.util.AccountListSharedPreferences;
 import com.ganlvtech.kahlanotify.util.LoginActivitySharedPreferences;
+import com.jaeger.library.StatusBarUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,7 +60,6 @@ public class LoginActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         setContentView(R.layout.activity_login);
 
         autoCompleteTextViewServer = findViewById(R.id.autoCompleteTextViewServer);
@@ -66,8 +67,6 @@ public class LoginActivity extends Activity {
         editTextPassword = findViewById(R.id.editTextPassword);
         buttonLogin = findViewById(R.id.buttonLogin);
 
-        autoCompleteTextViewServerArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, new ArrayList<String>());
-        autoCompleteTextViewEmailArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, new ArrayList<String>());
         accountListSharedPreferences = new AccountListSharedPreferences(this);
         accountListSharedPreferences.load();
         List<String> autoCompleteTextViewServerArrayList = new ArrayList<>(Arrays.asList(KAHLA_SERVER));
@@ -80,8 +79,8 @@ public class LoginActivity extends Activity {
                 autoCompleteTextViewEmailArrayList.add(account.email);
             }
         }
-        autoCompleteTextViewServerArrayAdapter.addAll(autoCompleteTextViewServerArrayList);
-        autoCompleteTextViewEmailArrayAdapter.addAll(autoCompleteTextViewEmailArrayList);
+        autoCompleteTextViewServerArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, autoCompleteTextViewServerArrayList);
+        autoCompleteTextViewEmailArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, autoCompleteTextViewEmailArrayList);
 
         autoCompleteTextViewServer.setAdapter(autoCompleteTextViewServerArrayAdapter);
         autoCompleteTextViewServer.setThreshold(1);

@@ -14,7 +14,7 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@android:style/Theme.Holo.Light.NoActionBar.Fullscreen">
+            android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,17 +23,24 @@
         </activity>
         <activity
             android:name=".LogActivity"
-            android:label="@string/title_activity_log" />
+            android:label="@string/title_activity_log"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".LoginActivity"
-            android:theme="@style/AppTheme" />
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.LoginActivity"
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ConversationListActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
         <activity
             android:name=".ConversationActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.ConversationActivity" />
+        <activity
+            android:name=".legacy.MainActivity"
             android:theme="@style/AppTheme" />
-        <activity android:name=".legacy.MainActivity" />
 
         <service
             android:name=".legacy.KahlaService"

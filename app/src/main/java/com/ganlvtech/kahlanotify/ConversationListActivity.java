@@ -25,10 +25,12 @@ import com.ganlvtech.kahlanotify.components.ConversationListItemAdapter;
 import com.ganlvtech.kahlanotify.kahla.models.Conversation;
 import com.ganlvtech.kahlanotify.legacy.MainActivity;
 import com.ganlvtech.kahlanotify.util.ConversationListActivitySharedPreferences;
+import com.jaeger.library.StatusBarUtil;
 
 import java.util.List;
 
 public class ConversationListActivity extends Activity {
+    private DrawerLayout drawerLayoutConversationListActivity;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ListView listViewConversations;
     private ListView listViewAccounts;
@@ -59,6 +61,7 @@ public class ConversationListActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation_list);
+        drawerLayoutConversationListActivity = findViewById(R.id.drawerLayoutConversationListActivity);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         toolbalTextViewTitle = findViewById(R.id.toolbalTextViewTitle);
         toolbalTextViewSubtitle = findViewById(R.id.toolbalTextViewSubtitle);
@@ -66,6 +69,8 @@ public class ConversationListActivity extends Activity {
         listViewAccounts = findViewById(R.id.listViewAccounts);
         textViewLegacy = findViewById(R.id.textViewLegacy);
         textViewNewAccount = findViewById(R.id.textViewNewAccount);
+
+        StatusBarUtil.setColorNoTranslucentForDrawerLayout(this, drawerLayoutConversationListActivity, getColor(R.color.main_theme));
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override

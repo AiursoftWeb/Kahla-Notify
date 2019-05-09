@@ -9,4 +9,5 @@
     <string name="https___">https://</string>
     <string name="sign_in">Sign in</string>
     <string name="server_and_email_already_exists">Server and email already exists.</string>
+    <string name="send">Send</string>
 </resources>

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="android:Theme.Holo.Light.NoActionBar">
-        <item name="android:windowTranslucentStatus">true</item>
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar.TranslucentDecor">
+        <item name="android:windowTranslucentNavigation">false</item>
+    </style>
+    <style name="AppTheme.LoginActivity" parent="AppTheme">
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="AppTheme.ConversationActivity" parent="AppTheme">
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@color/main_theme</item>
     </style>
 </resources>

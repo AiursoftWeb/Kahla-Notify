@@ -4,13 +4,15 @@
     android:layout_height="match_parent"
     android:layout_gravity="start"
     android:clickable="true"
+    android:elevation="4dp"
+    android:focusable="true"
     android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/id_draw_menu_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#2391d3"
+        android:background="@color/main_theme"
         android:orientation="vertical"
         android:paddingTop="@dimen/status_bar_height">
 
@@ -57,7 +59,6 @@
         android:background="#ffbc41"
         android:padding="16dp"
         android:text="Legacy Main Activity" />
-
 
     <TextView
         android:id="@+id/textViewNewAccount"
