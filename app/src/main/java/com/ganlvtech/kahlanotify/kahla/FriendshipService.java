@@ -9,15 +9,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
 public class FriendshipService {
-    public static final SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSX");
     private OkHttpClient client;
     private String baseUrl;
 
@@ -26,9 +25,13 @@ public class FriendshipService {
         this.baseUrl = baseUrl;
     }
 
-    public MyFriendsResponse MyFriends() throws IOException, ResponseCodeHttpUnauthorizedException {
+    public MyFriendsResponse MyFriends(boolean orderByName) throws IOException, ResponseCodeHttpUnauthorizedException {
+        HttpUrl url = HttpUrl.get(baseUrl).newBuilder()
+                .addPathSegments("/Friendship/MyFriends")
+                .addQueryParameter("orderByName", String.valueOf(orderByName))
+                .build();
         Request request = new Request.Builder()
-                .url(baseUrl + "/friendship/MyFriends?orderByName=false")
+                .url(url)
                 .build();
         Response response = client.newCall(request).execute();
         if (response.code() == 401) {
@@ -67,5 +70,4 @@ public class FriendshipService {
         }
         return r;
     }
-
 }

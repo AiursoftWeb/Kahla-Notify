@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.View;
 import android.widget.AdapterView;
@@ -63,8 +64,8 @@ public class ConversationListActivity extends Activity {
         setContentView(R.layout.activity_conversation_list);
         drawerLayoutConversationListActivity = findViewById(R.id.drawerLayoutConversationListActivity);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-        toolbalTextViewTitle = findViewById(R.id.toolbalTextViewTitle);
-        toolbalTextViewSubtitle = findViewById(R.id.toolbalTextViewSubtitle);
+        toolbalTextViewTitle = findViewById(R.id.toolbarTextViewTitle);
+        toolbalTextViewSubtitle = findViewById(R.id.toolbarTextViewSubtitle);
         listViewConversations = findViewById(R.id.listViewConversations);
         listViewAccounts = findViewById(R.id.listViewAccounts);
         textViewLegacy = findViewById(R.id.textViewLegacy);
@@ -148,7 +149,7 @@ public class ConversationListActivity extends Activity {
         List<KahlaClient> kahlaClientList = myService.getKahlaClientList();
         for (KahlaClient kahlaClient : kahlaClientList) {
             kahlaClient.fetchConversationListAsync();
-            kahlaClient.fetchUserInfoAsync();
+            kahlaClient.fetchMyUserInfoAsync();
         }
     }
 
@@ -196,8 +197,8 @@ public class ConversationListActivity extends Activity {
         } else if (this.kahlaClient != kahlaClient) {
             return;
         }
-        if (kahlaClient.userInfo != null) {
-            toolbalTextViewTitle.setText(kahlaClient.userInfo.nickName);
+        if (kahlaClient.myUserInfo != null) {
+            toolbalTextViewTitle.setText(kahlaClient.myUserInfo.nickName);
         } else {
             toolbalTextViewTitle.setText(kahlaClient.email);
         }
@@ -225,7 +226,7 @@ public class ConversationListActivity extends Activity {
 
     private void startConversationActivity(int conversationId) {
         Intent intent = new Intent(ConversationListActivity.this, ConversationActivity.class);
-        intent.putExtra("conversationId", conversationId);
+        intent.putExtra(ConversationActivity.INTENT_EXTRA_NAME_CONVERSATION_ID, conversationId);
         startActivity(intent);
     }
 
@@ -259,7 +260,7 @@ public class ConversationListActivity extends Activity {
         @Override
         public void handleMessage(final Message msg) {
             switch (msg.what) {
-                case KahlaClient.MESSAGE_WHAT_FETCH_USER_INFO_RESPONSE:
+                case KahlaClient.MESSAGE_WHAT_FETCH_MY_USER_INFO_RESPONSE:
                     conversationListActivity.updateKahlaClientList();
                     conversationListActivity.updateConversationList();
                     break;

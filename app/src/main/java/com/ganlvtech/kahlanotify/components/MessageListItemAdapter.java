@@ -28,16 +28,8 @@ public class MessageListItemAdapter extends IconTitleContentArrayAdapter {
         if (message != null) {
             IconTitleContent iconTitleContent = new IconTitleContent();
             iconTitleContent.placeholderResId = R.drawable.icon_default_avatar;
-            if (conversation != null && conversation.userId.equals(message.senderId)) {
-                iconTitleContent.iconUrl = conversation.getDisplayImageUrl(kahlaClient.apiClient.oss());
-                iconTitleContent.title = conversation.displayName;
-            } else if (kahlaClient.userInfo != null && kahlaClient.userInfo.id.equals(message.senderId)) {
-                iconTitleContent.iconUrl = kahlaClient.userInfo.getHeadImgFileUrl(kahlaClient.apiClient.oss());
-                iconTitleContent.title = kahlaClient.userInfo.nickName;
-            } else {
-                iconTitleContent.iconUrl = null;
-                iconTitleContent.title = message.senderId;
-            }
+            iconTitleContent.iconUrl = message.sender.getHeadImgFileUrl(kahlaClient.apiClient.oss());
+            iconTitleContent.title = message.sender.nickName;
             if (conversation != null) {
                 iconTitleContent.content = message.getContent(conversation.aesKey);
             } else {

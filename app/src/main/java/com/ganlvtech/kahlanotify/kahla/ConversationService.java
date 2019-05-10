@@ -4,6 +4,7 @@ import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedExc
 import com.ganlvtech.kahlanotify.kahla.models.Message;
 import com.ganlvtech.kahlanotify.kahla.models.User;
 import com.ganlvtech.kahlanotify.kahla.responses.conversation.GetMessageResponse;
+import com.ganlvtech.kahlanotify.kahla.responses.conversation.SendMessageResponse;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -13,8 +14,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import okhttp3.HttpUrl;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ConversationService {
@@ -60,24 +63,55 @@ public class ConversationService {
                         item.conversationId = jsonArrayItem.getInt("conversationId");
                         item.id = jsonArrayItem.getInt("id");
                         item.senderId = jsonArrayItem.getString("senderId");
-                        // JSONObject jsonArrayItemSender = jsonArrayItem.getJSONObject("sender");
-                        // item.sender = new User();
-                        // item.sender.accountCreateTime = jsonArrayItemSender.getString("accountCreateTime");
-                        // item.sender.bio = jsonArrayItemSender.getString("bio");
-                        // item.sender.email = jsonArrayItemSender.getString("email");
-                        // item.sender.emailConfirmed = jsonArrayItemSender.getBoolean("emailConfirmed");
-                        // item.sender.headImgFileKey = jsonArrayItemSender.getInt("headImgFileKey");
-                        // item.sender.id = jsonArrayItemSender.getString("id");
-                        // item.sender.makeEmailPublic = jsonArrayItemSender.getBoolean("makeEmailPublic");
-                        // item.sender.nickName = jsonArrayItemSender.getString("nickName");
-                        // item.sender.preferedLanguage = jsonArrayItemSender.getString("preferedLanguage");
-                        // item.sender.sex = jsonArrayItemSender.getString("sex");
+                        JSONObject jsonArrayItemSender = jsonArrayItem.getJSONObject("sender");
+                        item.sender = new User();
+                        item.sender.accountCreateTime = jsonArrayItemSender.getString("accountCreateTime");
+                        item.sender.bio = jsonArrayItemSender.getString("bio");
+                        item.sender.email = jsonArrayItemSender.isNull("email") ? "" : jsonArrayItemSender.getString("email");
+                        item.sender.emailConfirmed = jsonArrayItemSender.getBoolean("emailConfirmed");
+                        item.sender.headImgFileKey = jsonArrayItemSender.getInt("headImgFileKey");
+                        item.sender.id = jsonArrayItemSender.getString("id");
+                        item.sender.makeEmailPublic = jsonArrayItemSender.getBoolean("makeEmailPublic");
+                        item.sender.nickName = jsonArrayItemSender.getString("nickName");
+                        item.sender.preferedLanguage = jsonArrayItemSender.getString("preferedLanguage");
+                        item.sender.sex = jsonArrayItemSender.getString("sex");
                         item.content = jsonArrayItem.getString("content");
                         item.read = jsonArrayItem.getBoolean("read");
                         item.sendTime = jsonArrayItem.getString("sendTime");
                         r.items.add(item);
                     }
                 }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return r;
+    }
+
+    public SendMessageResponse SendMessage(int id, String content) throws IOException, ResponseCodeHttpUnauthorizedException {
+        HttpUrl url = HttpUrl.get(baseUrl).newBuilder()
+                .addPathSegments("Conversation/SendMessage/")
+                .addPathSegment(String.valueOf(id))
+                .build();
+        RequestBody body = new MultipartBody.Builder()
+                .addFormDataPart("content", content)
+                .setType(MultipartBody.FORM)
+                .build();
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        Response response = client.newCall(request).execute();
+        if (response.code() == 401) {
+            throw new ResponseCodeHttpUnauthorizedException();
+        }
+        SendMessageResponse r = new SendMessageResponse();
+        r.code = -1;
+        if (response.body() != null) {
+            try {
+                JSONObject jsonObject = new JSONObject(response.body().string());
+                r.code = jsonObject.getInt("code");
+                r.message = jsonObject.getString("message");
             } catch (JSONException e) {
                 e.printStackTrace();
             }

@@ -24,7 +24,7 @@
                 android:paddingBottom="4dp">
 
                 <TextView
-                    android:id="@+id/toolbalTextViewTitle"
+                    android:id="@+id/toolbarTextViewTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -33,7 +33,7 @@
                     android:textColor="@color/toolbar_title" />
 
                 <TextView
-                    android:id="@+id/toolbalTextViewSubtitle"
+                    android:id="@+id/toolbarTextViewSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -51,7 +51,10 @@
             <ListView
                 android:id="@+id/listViewConversations"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:divider="@android:color/darker_gray"
+                android:dividerHeight="1px"
+                android:scrollbars="none" />
         </android.support.v4.widget.SwipeRefreshLayout>
     </LinearLayout>
 

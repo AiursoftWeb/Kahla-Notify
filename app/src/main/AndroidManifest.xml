@@ -34,9 +34,7 @@
         <activity
             android:name=".ConversationActivity"
             android:theme="@style/AppTheme.ConversationActivity" />
-        <activity
-            android:name=".legacy.MainActivity"
-            android:theme="@style/AppTheme" />
+        <activity android:name=".legacy.MainActivity" />
 
         <service
             android:name=".legacy.KahlaService"

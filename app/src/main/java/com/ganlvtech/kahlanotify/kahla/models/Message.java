@@ -21,7 +21,6 @@ public class Message {
     public int id;
     public boolean read;
     public String sendTime;
-    @Deprecated
     public User sender;
     public String senderId;
     public Conversation conversation;

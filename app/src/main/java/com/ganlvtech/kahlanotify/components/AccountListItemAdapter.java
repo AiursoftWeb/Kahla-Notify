@@ -20,7 +20,7 @@ public class AccountListItemAdapter extends IconTitleContentArrayAdapter {
             IconTitleContent iconTitleContent = new IconTitleContent();
             iconTitleContent.placeholderResId = R.drawable.icon_default_avatar;
             iconTitleContent.content = kahlaClient.baseUrl;
-            User user = kahlaClient.userInfo;
+            User user = kahlaClient.myUserInfo;
             if (user == null) {
                 iconTitleContent.title = kahlaClient.email;
                 iconTitleContent.iconUrl = null;

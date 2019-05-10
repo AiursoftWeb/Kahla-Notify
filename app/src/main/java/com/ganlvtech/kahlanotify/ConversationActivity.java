@@ -4,87 +4,135 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.components.MessageListItemAdapter;
+import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 import com.ganlvtech.kahlanotify.kahla.models.Conversation;
 import com.ganlvtech.kahlanotify.util.ConversationListActivitySharedPreferences;
 
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 public class ConversationActivity extends MyServiceActivity {
-    private SwipeRefreshLayout swipeRefreshLayout;
-    private TextView toolbalTextViewTitle;
-    private TextView toolbalTextViewSubtitle;
-    private ListView listViewConversations;
-    private MessageListItemAdapter messageListItemAdapter;
-    private ConversationListActivitySharedPreferences conversationListActivitySharedPreferences;
-    private int conversationId;
+    public static final String INTENT_EXTRA_NAME_CONVERSATION_ID = "conversationId";
+    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private TextView mToolbarTextViewTitle;
+    private TextView mToolbarTextViewSubtitle;
+    private ListView mListViewConversations;
+    private EditText mEditTextSend;
+    private Button mButtonSend;
+    private MessageListItemAdapter mMessageListItemAdapter;
+    private ConversationListActivitySharedPreferences mConversationListActivitySharedPreferences;
+    private int mConversationId;
+    @Nullable
     private KahlaClient kahlaClient;
-    private Conversation conversation;
+    @Nullable
+    private Conversation mConversation;
+    @Nullable
+    private MyHandler mMyHandler;
     private Handler kahlaClientOriginalHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_conversation);
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-        toolbalTextViewTitle = findViewById(R.id.toolbalTextViewTitle);
-        toolbalTextViewSubtitle = findViewById(R.id.toolbalTextViewSubtitle);
-        listViewConversations = findViewById(R.id.listViewConversations);
 
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        // Load shared preferences
+        mConversationListActivitySharedPreferences = new ConversationListActivitySharedPreferences(this);
+        mConversationListActivitySharedPreferences.load();
+
+        // Get intent extras
+        mConversationId = getIntent().getIntExtra(INTENT_EXTRA_NAME_CONVERSATION_ID, 0);
+
+        setContentView(R.layout.activity_conversation);
+        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        mToolbarTextViewTitle = findViewById(R.id.toolbarTextViewTitle);
+        mToolbarTextViewSubtitle = findViewById(R.id.toolbarTextViewSubtitle);
+        mListViewConversations = findViewById(R.id.listViewConversations);
+        mEditTextSend = findViewById(R.id.editTextSend);
+        mButtonSend = findViewById(R.id.buttonSend);
+
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                kahlaClient.fetchConversationAsync(conversationId);
+                kahlaClient.fetchConversationMessageAsync(mConversationId);
             }
         });
-        messageListItemAdapter = new MessageListItemAdapter(this);
-        listViewConversations.setAdapter(messageListItemAdapter);
 
-        conversationListActivitySharedPreferences = new ConversationListActivitySharedPreferences(this);
-        conversationListActivitySharedPreferences.load();
-        conversationId = getIntent().getIntExtra("conversationId", 0);
+        mMessageListItemAdapter = new MessageListItemAdapter(this);
+        mListViewConversations.setAdapter(mMessageListItemAdapter);
+
+        mButtonSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String message = mEditTextSend.getText().toString();
+                try {
+                    if (mConversation != null) {
+                        String content = CryptoJs.aesEncrypt(message.getBytes("UTF-8"), mConversation.aesKey);
+                        kahlaClient.sendMessageAsync(mConversationId, content);
+                    }
+                } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        // Create main thread handler
+        mMyHandler = new MyHandler(this);
     }
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        List<KahlaClient> kahlaClientList = myService.getKahlaClientList();
-        kahlaClient = conversationListActivitySharedPreferences.findKahlaClient(kahlaClientList);
+        if (mMyService == null) {
+            return;
+        }
+        List<KahlaClient> kahlaClientList = mMyService.getKahlaClientList();
+        kahlaClient = mConversationListActivitySharedPreferences.findKahlaClient(kahlaClientList);
         if (kahlaClient == null) {
             finish();
+            return;
         }
-
         kahlaClientOriginalHandler = kahlaClient.mainThreadHandler;
-        kahlaClient.mainThreadHandler = new MyHandler(Looper.getMainLooper(), this);
-
-        conversation = kahlaClient.findConversationById(conversationId);
-        if (conversation == null) {
+        kahlaClient.mainThreadHandler = mMyHandler;
+        mConversation = kahlaClient.findConversationById(mConversationId);
+        if (mConversation == null) {
             finish();
+            return;
         }
-        swipeRefreshLayout.setRefreshing(true);
+        mSwipeRefreshLayout.setRefreshing(true);
         updateMessageList();
-        kahlaClient.fetchConversationAsync(conversationId);
+        kahlaClient.fetchConversationMessageAsync(mConversationId);
     }
 
     private void updateMessageList() {
-        toolbalTextViewTitle.setText(conversation.displayName);
-        if (kahlaClient.userInfo != null) {
-            toolbalTextViewSubtitle.setText(kahlaClient.userInfo.nickName + " " + kahlaClient.baseUrl);
+        mToolbarTextViewTitle.setText(mConversation.displayName);
+        if (kahlaClient.myUserInfo != null) {
+            mToolbarTextViewSubtitle.setText(kahlaClient.myUserInfo.nickName + " " + kahlaClient.baseUrl);
         } else {
-            toolbalTextViewSubtitle.setText(kahlaClient.email + " " + kahlaClient.baseUrl);
+            mToolbarTextViewSubtitle.setText(kahlaClient.email + " " + kahlaClient.baseUrl);
         }
-        messageListItemAdapter.kahlaClient = kahlaClient;
-        messageListItemAdapter.conversation = conversation;
-        messageListItemAdapter.clear();
-        if (conversation.messageList != null) {
-            messageListItemAdapter.addAll(conversation.messageList);
+        mMessageListItemAdapter.kahlaClient = kahlaClient;
+        mMessageListItemAdapter.conversation = mConversation;
+        mMessageListItemAdapter.clear();
+        if (mConversation.messageList != null) {
+            mMessageListItemAdapter.addAll(mConversation.messageList);
         }
-        swipeRefreshLayout.setRefreshing(false);
+        mSwipeRefreshLayout.setRefreshing(false);
     }
 
     @Override
@@ -100,22 +148,19 @@ public class ConversationActivity extends MyServiceActivity {
     private static class MyHandler extends Handler {
         private ConversationActivity conversationActivity;
 
-        MyHandler(Looper looper, ConversationActivity conversationActivity) {
-            super(looper);
+        MyHandler(ConversationActivity conversationActivity) {
+            super(Looper.getMainLooper());
             this.conversationActivity = conversationActivity;
         }
 
         @Override
         public void handleMessage(final Message msg) {
             switch (msg.what) {
-                case KahlaClient.MESSAGE_WHAT_FETCH_USER_INFO_RESPONSE:
+                case KahlaClient.MESSAGE_WHAT_FETCH_MY_USER_INFO_RESPONSE:
                     conversationActivity.updateMessageList();
-                case KahlaClient.MESSAGE_WHAT_FETCH_CONVERSATION_RESPONSE:
+                case KahlaClient.MESSAGE_WHAT_FETCH_CONVERSATION_MESSAGE_RESPONSE:
                     conversationActivity.updateMessageList();
                     break;
-            }
-            if (conversationActivity.kahlaClientOriginalHandler != null) {
-                conversationActivity.kahlaClientOriginalHandler.handleMessage(msg);
             }
         }
     }

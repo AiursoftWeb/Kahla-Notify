@@ -3,10 +3,12 @@ package com.ganlvtech.kahlanotify.kahla.lib;
 import android.util.Base64;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
@@ -20,6 +22,29 @@ import javax.crypto.spec.SecretKeySpec;
  * @link https://stackoverflow.com/questions/27220297/what-are-the-aes-parameters-used-and-steps-performed-internally-by-crypto-js-whi/27250883#27250883
  */
 public class CryptoJs {
+    public static String aesEncrypt(byte[] data, String passwordHex) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, UnsupportedEncodingException {
+        // Salted__
+        SecureRandom random = new SecureRandom();
+        byte[] salt = new byte[8];
+        random.nextBytes(salt);
+        byte[] password = passwordHex.getBytes("UTF-8");
+        int keySize = 8; // 8 words = 256-bit
+        int ivSize = 4; // 4 words = 128-bit
+        byte[] javaKey = new byte[keySize * 4];
+        byte[] javaIv = new byte[ivSize * 4];
+        evpKDF(password, keySize, ivSize, salt, javaKey, javaIv);
+        Cipher aesCipherForEncryption = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        SecretKeySpec secretKey = new SecretKeySpec(javaKey, "AES");
+        IvParameterSpec ivspec = new IvParameterSpec(javaIv);
+        aesCipherForEncryption.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
+        byte[] cipherText = aesCipherForEncryption.doFinal(data);
+        ByteBuffer buf = ByteBuffer.wrap(new byte[cipherText.length + 16]);
+        buf.put("Salted__".getBytes());
+        buf.put(salt);
+        buf.put(cipherText);
+        return Base64.encodeToString(buf.array(), Base64.DEFAULT);
+    }
+
     public static byte[] aesDecrypt(String cipherTextBase64, String passwordHex) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, UnsupportedEncodingException {
         byte[] cipherText = Base64.decode(cipherTextBase64, Base64.DEFAULT);
         // Salted__
