@@ -1,18 +1,13 @@
 package com.ganlvtech.kahlanotify;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.Nullable;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -22,148 +17,117 @@ import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.util.AccountListSharedPreferences;
 import com.ganlvtech.kahlanotify.util.LoginActivitySharedPreferences;
-import com.jaeger.library.StatusBarUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-
-public class LoginActivity extends Activity {
-    public final static String[] KAHLA_SERVER = {
+public class LoginActivity extends MyServiceActivity {
+    public static final String[] DEFAULT_KAHLA_SERVER = {
             "https://server.kahla.app",
             "https://staging.server.kahla.app",
     };
-    private AutoCompleteTextView autoCompleteTextViewServer;
-    private AutoCompleteTextView autoCompleteTextViewEmail;
-    private EditText editTextPassword;
-    private Button buttonLogin;
-    private MyService myService;
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MyService.ServiceBinder serviceBinder = (MyService.ServiceBinder) service;
-            myService = serviceBinder.getService();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            myService = null;
-        }
-    };
-    private boolean isSecondAccount;
-    private ArrayAdapter<String> autoCompleteTextViewServerArrayAdapter;
-    private ArrayAdapter<String> autoCompleteTextViewEmailArrayAdapter;
-    private LoginActivitySharedPreferences loginActivitySharedPreferences;
-    private AccountListSharedPreferences accountListSharedPreferences;
+    public static final String INTENT_EXTRA_NAME_IS_SECOND_ACCOUNT = "isSecondAccount";
+    private AutoCompleteTextView mAutoCompleteTextViewServer;
+    private AutoCompleteTextView mAutoCompleteTextViewEmail;
+    private EditText mEditTextPassword;
+    private Button mButtonLogin;
+    private boolean mIsSecondAccount;
+    private LoginActivitySharedPreferences mLoginActivitySharedPreferences;
+    private AccountListSharedPreferences mAccountListSharedPreferences;
+    @Nullable
+    private KahlaClient mKahlaClient;
+    private MyHandler mMyHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Get intent data
+        mIsSecondAccount = getIntent().getBooleanExtra(INTENT_EXTRA_NAME_IS_SECOND_ACCOUNT, false);
+
+        // Load preferences
+        mAccountListSharedPreferences = new AccountListSharedPreferences(this);
+        mAccountListSharedPreferences.load();
+        mLoginActivitySharedPreferences = new LoginActivitySharedPreferences(this);
+        mLoginActivitySharedPreferences.load();
+
+        // Find views
         setContentView(R.layout.activity_login);
+        mAutoCompleteTextViewServer = findViewById(R.id.autoCompleteTextViewServer);
+        mAutoCompleteTextViewEmail = findViewById(R.id.autoCompleteTextViewEmail);
+        mEditTextPassword = findViewById(R.id.editTextPassword);
+        mButtonLogin = findViewById(R.id.buttonLogin);
 
-        autoCompleteTextViewServer = findViewById(R.id.autoCompleteTextViewServer);
-        autoCompleteTextViewEmail = findViewById(R.id.autoCompleteTextViewEmail);
-        editTextPassword = findViewById(R.id.editTextPassword);
-        buttonLogin = findViewById(R.id.buttonLogin);
-
-        accountListSharedPreferences = new AccountListSharedPreferences(this);
-        accountListSharedPreferences.load();
-        List<String> autoCompleteTextViewServerArrayList = new ArrayList<>(Arrays.asList(KAHLA_SERVER));
-        List<String> autoCompleteTextViewEmailArrayList = new ArrayList<>();
-        for (AccountListSharedPreferences.Account account : accountListSharedPreferences.accountList) {
-            if (!autoCompleteTextViewServerArrayList.contains(account.server)) {
-                autoCompleteTextViewServerArrayList.add(account.server);
-            }
-            if (!autoCompleteTextViewEmailArrayList.contains(account.email)) {
-                autoCompleteTextViewEmailArrayList.add(account.email);
-            }
-        }
-        autoCompleteTextViewServerArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, autoCompleteTextViewServerArrayList);
-        autoCompleteTextViewEmailArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, autoCompleteTextViewEmailArrayList);
-
-        autoCompleteTextViewServer.setAdapter(autoCompleteTextViewServerArrayAdapter);
-        autoCompleteTextViewServer.setThreshold(1);
-        autoCompleteTextViewServer.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        // Ini Set listeners
+        ArrayAdapter<String> autoCompleteTextViewServerArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, mAccountListSharedPreferences.getServerList());
+        mAutoCompleteTextViewServer.setAdapter(autoCompleteTextViewServerArrayAdapter);
+        mAutoCompleteTextViewServer.setThreshold(1);
+        mAutoCompleteTextViewServer.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
-                    autoCompleteTextViewServer.showDropDown();
+                    mAutoCompleteTextViewServer.showDropDown();
                 }
             }
         });
-        autoCompleteTextViewServer.setOnClickListener(new View.OnClickListener() {
+        mAutoCompleteTextViewServer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                autoCompleteTextViewServer.showDropDown();
-            }
-        });
-        autoCompleteTextViewEmail.setAdapter(autoCompleteTextViewEmailArrayAdapter);
-        autoCompleteTextViewEmail.setThreshold(1);
-        autoCompleteTextViewEmail.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) {
-                    autoCompleteTextViewEmail.showDropDown();
-                }
-            }
-        });
-        autoCompleteTextViewEmail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                autoCompleteTextViewEmail.showDropDown();
+                mAutoCompleteTextViewServer.showDropDown();
             }
         });
 
-        buttonLogin.setOnClickListener(new View.OnClickListener() {
+        ArrayAdapter<String> autoCompleteTextViewEmailArrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, mAccountListSharedPreferences.getEmailList());
+        mAutoCompleteTextViewEmail.setAdapter(autoCompleteTextViewEmailArrayAdapter);
+        mAutoCompleteTextViewEmail.setThreshold(1);
+        mAutoCompleteTextViewEmail.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    mAutoCompleteTextViewEmail.showDropDown();
+                }
+            }
+        });
+        mAutoCompleteTextViewEmail.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mAutoCompleteTextViewEmail.showDropDown();
+            }
+        });
+
+        mButtonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 login();
             }
         });
 
-        loginActivitySharedPreferences = new LoginActivitySharedPreferences(this);
-        loginActivitySharedPreferences.load();
-        if (loginActivitySharedPreferences.server.length() == 0) {
-            autoCompleteTextViewServer.setText(getString(R.string.https___));
+        if (mLoginActivitySharedPreferences.server.length() == 0) {
+            mAutoCompleteTextViewServer.setText(getString(R.string.https___));
         } else {
-            autoCompleteTextViewServer.setText(loginActivitySharedPreferences.server);
+            mAutoCompleteTextViewServer.setText(mLoginActivitySharedPreferences.server);
         }
-        autoCompleteTextViewEmail.setText(loginActivitySharedPreferences.email);
-        editTextPassword.setText(loginActivitySharedPreferences.password);
+        mAutoCompleteTextViewEmail.setText(mLoginActivitySharedPreferences.email);
+        mEditTextPassword.setText(mLoginActivitySharedPreferences.password);
 
-        isSecondAccount = getIntent().getBooleanExtra("isSecondAccount", false);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Intent intent = new Intent(this, MyService.class);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onStop() {
-        unbindService(serviceConnection);
-        super.onStop();
+        // Create main thread handler
+        mMyHandler = new MyHandler(this);
     }
 
     private void login() {
-        String server = autoCompleteTextViewServer.getText().toString();
-        String email = autoCompleteTextViewEmail.getText().toString();
-        String password = editTextPassword.getText().toString();
-        if (accountListSharedPreferences.isExists(server, email)) {
+        String server = mAutoCompleteTextViewServer.getText().toString();
+        String email = mAutoCompleteTextViewEmail.getText().toString();
+        String password = mEditTextPassword.getText().toString();
+        if (mAccountListSharedPreferences.isExists(server, email)) {
             loginFailed(getString(R.string.server_and_email_already_exists));
+            return;
         }
-        buttonLogin.setText(getString(R.string.logging_in___));
-        buttonLogin.setEnabled(false);
-        loginActivitySharedPreferences.server = server;
-        loginActivitySharedPreferences.email = email;
-        loginActivitySharedPreferences.password = password;
-        loginActivitySharedPreferences.save();
-        KahlaClient kahlaClient = new KahlaClient(server, email, password);
-        kahlaClient.mainThreadHandler = new MyHandler(Looper.getMainLooper(), this, kahlaClient);
-        kahlaClient.loginAsync();
+        mButtonLogin.setText(getString(R.string.logging_in___));
+        mButtonLogin.setEnabled(false);
+        mLoginActivitySharedPreferences.server = server;
+        mLoginActivitySharedPreferences.email = email;
+        mLoginActivitySharedPreferences.password = password;
+        mLoginActivitySharedPreferences.save();
+        mKahlaClient = new KahlaClient(server, email, password);
+        mKahlaClient.mainThreadHandler = mMyHandler;
+        mKahlaClient.loginAsync();
     }
 
     private void loginFailed(String message) {
@@ -171,17 +135,23 @@ public class LoginActivity extends Activity {
                 .setTitle(getString(R.string.sign_in))
                 .setMessage(message)
                 .show();
-        buttonLogin.setText(getString(R.string.login));
-        buttonLogin.setEnabled(true);
+        mButtonLogin.setText(getString(R.string.login));
+        mButtonLogin.setEnabled(true);
+        if (mKahlaClient != null) {
+            mKahlaClient.quitSafely();
+            mKahlaClient = null;
+        }
     }
 
-    private void loginOK(KahlaClient kahlaClient) {
-        myService.addKahlaClient(kahlaClient);
-        startConversationListActivity();
+    private void loginOK() {
+        if (mMyService != null && mKahlaClient != null) {
+            mMyService.addKahlaClient(mKahlaClient);
+            startConversationListActivity();
+        }
     }
 
     private void startConversationListActivity() {
-        if (!isSecondAccount) {
+        if (!mIsSecondAccount) {
             Intent intent = new Intent(this, ConversationListActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
             startActivity(intent);
@@ -190,24 +160,22 @@ public class LoginActivity extends Activity {
     }
 
     private static class MyHandler extends Handler {
-        private LoginActivity loginActivity;
-        private KahlaClient kahlaClient;
+        private final LoginActivity loginActivity;
 
-        MyHandler(Looper looper, LoginActivity loginActivity, KahlaClient kahlaClient) {
-            super(looper);
+        MyHandler(LoginActivity loginActivity) {
+            super(Looper.getMainLooper());
             this.loginActivity = loginActivity;
-            this.kahlaClient = kahlaClient;
         }
 
         @Override
         public void handleMessage(final Message msg) {
             switch (msg.what) {
                 case KahlaClient.MESSAGE_WHAT_LOGIN_RESPONSE:
-                    AuthByPasswordResponse authByPasswordResponse = (AuthByPasswordResponse) msg.obj;
-                    if (authByPasswordResponse.code == 0) {
-                        loginActivity.loginOK(kahlaClient);
+                    AuthByPasswordResponse response = (AuthByPasswordResponse) msg.obj;
+                    if (response.code == 0) {
+                        loginActivity.loginOK();
                     } else {
-                        loginActivity.loginFailed(authByPasswordResponse.message);
+                        loginActivity.loginFailed(response.message);
                     }
                     break;
                 case KahlaClient.MESSAGE_WHAT_LOGIN_EXCEPTION:

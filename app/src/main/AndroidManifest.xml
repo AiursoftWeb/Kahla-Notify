@@ -27,16 +27,12 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".LoginActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.LoginActivity"
-            android:windowSoftInputMode="adjustPan" />
+            android:theme="@style/AppTheme.LoginActivity" />
         <activity
             android:name=".ConversationListActivity"
-            android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
         <activity
             android:name=".ConversationActivity"
-            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.ConversationActivity" />
         <activity
             android:name=".legacy.MainActivity"
@@ -49,7 +45,7 @@
         <service
             android:name=".MyService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
     </application>
 
 </manifest>

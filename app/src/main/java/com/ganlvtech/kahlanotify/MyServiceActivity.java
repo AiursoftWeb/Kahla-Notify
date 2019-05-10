@@ -7,21 +7,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
+import android.util.Log;
 
 @SuppressLint("Registered")
 public class MyServiceActivity extends Activity {
-    protected MyService myService;
-    protected ServiceConnection serviceConnection = new ServiceConnection() {
+    private static final String TAG = "MyServiceActivity";
+    @Nullable
+    protected MyService mMyService;
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MyService.ServiceBinder serviceBinder = (MyService.ServiceBinder) service;
-            myService = serviceBinder.getService();
+            mMyService = serviceBinder.getService();
             MyServiceActivity.this.onServiceConnected();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            myService = null;
+            mMyService = null;
+            MyServiceActivity.this.onServiceDisconnected();
         }
     };
 
@@ -29,15 +34,30 @@ public class MyServiceActivity extends Activity {
     protected void onStart() {
         super.onStart();
         Intent intent = new Intent(this, MyService.class);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
+        if (BuildConfig.DEBUG) {
+            Log.v(TAG, "bindService " + this);
+        }
     }
 
     @Override
     protected void onStop() {
-        unbindService(serviceConnection);
+        unbindService(mServiceConnection);
+        if (BuildConfig.DEBUG) {
+            Log.v(TAG, "unbindService " + this);
+        }
         super.onStop();
     }
 
     protected void onServiceConnected() {
+        if (BuildConfig.DEBUG) {
+            Log.v(TAG, "onServiceConnected " + this);
+        }
+    }
+
+    protected void onServiceDisconnected() {
+        if (BuildConfig.DEBUG) {
+            Log.v(TAG, "onServiceDisconnected " + this);
+        }
     }
 }

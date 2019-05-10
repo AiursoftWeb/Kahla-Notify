@@ -3,12 +3,17 @@ package com.ganlvtech.kahlanotify.util;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.ganlvtech.kahlanotify.LoginActivity;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class AccountListSharedPreferences {
     public static final String SHARED_PREFERENCES_NAME = "AccountList";
@@ -54,6 +59,22 @@ public class AccountListSharedPreferences {
             }
         }
         return false;
+    }
+
+    public List<String> getServerList() {
+        Set<String> stringSet = new HashSet<>(Arrays.asList(LoginActivity.DEFAULT_KAHLA_SERVER));
+        for (Account account : accountList) {
+            stringSet.add(account.server);
+        }
+        return new ArrayList<>(stringSet);
+    }
+
+    public List<String> getEmailList() {
+        Set<String> stringSet = new HashSet<>();
+        for (Account account : accountList) {
+            stringSet.add(account.email);
+        }
+        return new ArrayList<>(stringSet);
     }
 
     public static class Account {

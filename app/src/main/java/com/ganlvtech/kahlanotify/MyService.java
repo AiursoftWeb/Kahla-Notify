@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.ganlvtech.kahlanotify.client.KahlaClient;
@@ -13,19 +14,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MyService extends Service {
+    @NonNull
     private IBinder binder = new ServiceBinder();
+    @NonNull
     private List<KahlaClient> kahlaClientList = new ArrayList<>();
 
-    public void addKahlaClient(KahlaClient kahlaClient) {
+    public void addKahlaClient(@NonNull KahlaClient kahlaClient) {
         kahlaClientList.add(kahlaClient);
         saveConfig();
     }
 
-    public void removeKahlaClient(KahlaClient kahlaClient) {
+    public void removeKahlaClient(@NonNull KahlaClient kahlaClient) {
         kahlaClientList.remove(kahlaClient);
         saveConfig();
     }
 
+    @NonNull
     public List<KahlaClient> getKahlaClientList() {
         return kahlaClientList;
     }
@@ -75,8 +79,9 @@ public class MyService extends Service {
         return binder;
     }
 
-    public class ServiceBinder extends Binder {
-        public MyService getService() {
+    class ServiceBinder extends Binder {
+        @NonNull
+        MyService getService() {
             return MyService.this;
         }
     }

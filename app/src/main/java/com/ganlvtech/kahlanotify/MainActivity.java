@@ -1,30 +1,12 @@
 package com.ganlvtech.kahlanotify;
 
-import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 
-public class MainActivity extends Activity {
-    private MyService myService;
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MyService.ServiceBinder serviceBinder = (MyService.ServiceBinder) service;
-            myService = serviceBinder.getService();
-            MainActivity.this.onServiceConnected();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            myService = null;
-        }
-    };
+public class MainActivity extends MyServiceActivity {
+    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,24 +14,14 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         startService(new Intent(this, MyService.class));
+        mHandler = new Handler(Looper.getMainLooper());
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        bindService(new Intent(this, MyService.class), serviceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onStop() {
-        unbindService(serviceConnection);
-        super.onStop();
-    }
-
-    private void onServiceConnected() {
-        if (myService.getKahlaClientList().isEmpty()) {
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.postDelayed(new Runnable() {
+    protected void onServiceConnected() {
+        assert mMyService != null;
+        if (mMyService.getKahlaClientList().isEmpty()) {
+            mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     startLoginActivity();
