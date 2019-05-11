@@ -1,5 +1,7 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import android.support.annotation.NonNull;
+
 import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
 import com.ganlvtech.kahlanotify.kahla.responses.conversation.GetMessageResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.conversation.SendMessageResponse;
@@ -20,7 +22,8 @@ public class ConversationService extends BaseService {
         super(client, server);
     }
 
-    public static GetMessageResponse parseGetMessageResponse(Response response) throws IOException, ResponseCodeHttpUnauthorizedException, JSONException {
+    @NonNull
+    public static GetMessageResponse parseGetMessageResponse(@NonNull Response response) throws IOException, ResponseCodeHttpUnauthorizedException, JSONException {
         mustAuthorized(response);
         assert response.body() != null;
         String json = response.body().string();
@@ -28,7 +31,8 @@ public class ConversationService extends BaseService {
         return new GetMessageResponse(json);
     }
 
-    public static SendMessageResponse parseSendMessageResponse(Response response) throws IOException, ResponseCodeHttpUnauthorizedException, JSONException {
+    @NonNull
+    public static SendMessageResponse parseSendMessageResponse(@NonNull Response response) throws IOException, ResponseCodeHttpUnauthorizedException, JSONException {
         mustAuthorized(response);
         assert response.body() != null;
         String json = response.body().string();

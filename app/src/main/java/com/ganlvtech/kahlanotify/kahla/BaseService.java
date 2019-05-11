@@ -1,5 +1,7 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import android.support.annotation.NonNull;
+
 import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
 
 import okhttp3.Call;
@@ -44,7 +46,8 @@ public class BaseService {
         return newCall(newRequestBuilder(path).build());
     }
 
-    protected static Response mustAuthorized(Response response) throws ResponseCodeHttpUnauthorizedException {
+    @NonNull
+    protected static Response mustAuthorized(@NonNull Response response) throws ResponseCodeHttpUnauthorizedException {
         if (response.code() == 401) {
             response.close();
             throw new ResponseCodeHttpUnauthorizedException();

@@ -1,5 +1,7 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import android.support.annotation.NonNull;
+
 import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 
@@ -17,7 +19,8 @@ public class FriendshipService extends BaseService {
         super(client, server);
     }
 
-    public static MyFriendsResponse parseMyFriendsResponse(Response response) throws IOException, JSONException, ResponseCodeHttpUnauthorizedException {
+    @NonNull
+    public static MyFriendsResponse parseMyFriendsResponse(@NonNull Response response) throws IOException, JSONException, ResponseCodeHttpUnauthorizedException {
         mustAuthorized(response);
         assert response.body() != null;
         String json = response.body().string();

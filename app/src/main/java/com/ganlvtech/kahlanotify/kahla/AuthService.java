@@ -1,5 +1,7 @@
 package com.ganlvtech.kahlanotify.kahla;
 
+import android.support.annotation.NonNull;
+
 import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.InitPusherResponse;
@@ -21,28 +23,32 @@ public class AuthService extends BaseService {
         super(client, server);
     }
 
-    public static AuthByPasswordResponse parseAuthByPasswordResponse(Response response) throws IOException, JSONException {
+    @NonNull
+    public static AuthByPasswordResponse parseAuthByPasswordResponse(@NonNull Response response) throws IOException, JSONException {
         assert response.body() != null;
         String json = response.body().string();
         response.close();
         return new AuthByPasswordResponse(json);
     }
 
-    public static InitPusherResponse parseInitPusherResponse(Response response) throws ResponseCodeHttpUnauthorizedException, IOException, JSONException {
+    @NonNull
+    public static InitPusherResponse parseInitPusherResponse(@NonNull Response response) throws ResponseCodeHttpUnauthorizedException, IOException, JSONException {
         mustAuthorized(response);
         assert response.body() != null;
         String json = response.body().string();
         return new InitPusherResponse(json);
     }
 
-    public static VersionResponse parseVersionResponse(Response response) throws IOException, JSONException {
+    @NonNull
+    public static VersionResponse parseVersionResponse(@NonNull Response response) throws IOException, JSONException {
         assert response.body() != null;
         String json = response.body().string();
         response.close();
         return new VersionResponse(json);
     }
 
-    public static MeResponse parseMeResponse(Response response) throws ResponseCodeHttpUnauthorizedException, IOException, JSONException {
+    @NonNull
+    public static MeResponse parseMeResponse(@NonNull Response response) throws ResponseCodeHttpUnauthorizedException, IOException, JSONException {
         mustAuthorized(response);
         assert response.body() != null;
         String json = response.body().string();
