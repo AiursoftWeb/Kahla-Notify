@@ -33,6 +33,7 @@ public class IconTitleContentArrayAdapter extends ArrayAdapter {
         TextView textViewTitle = view.findViewById(R.id.textViewTitle);
         TextView textViewContent = view.findViewById(R.id.textViewContent);
         TextView textViewUnreadCount = view.findViewById(R.id.textViewUnreadCount);
+        TextView textViewAt = view.findViewById(R.id.textViewAt);
 
         IconTitleContent item = getIconTitleContentItem(position);
         if (item != null) {
@@ -47,6 +48,11 @@ public class IconTitleContentArrayAdapter extends ArrayAdapter {
             } else {
                 textViewUnreadCount.setVisibility(View.VISIBLE);
                 textViewUnreadCount.setText(String.valueOf(item.unreadCount));
+            }
+            if (item.at) {
+                textViewAt.setVisibility(View.VISIBLE);
+            } else {
+                textViewAt.setVisibility(View.GONE);
             }
         }
         return view;

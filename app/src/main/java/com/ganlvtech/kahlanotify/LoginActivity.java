@@ -3,9 +3,6 @@ package com.ganlvtech.kahlanotify;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -33,7 +30,6 @@ public class LoginActivity extends MyServiceActivity {
     private AccountListSharedPreferences mAccountListSharedPreferences;
     @Nullable
     private KahlaClient mKahlaClient;
-    private MyHandler mMyHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,9 +102,6 @@ public class LoginActivity extends MyServiceActivity {
         }
         mAutoCompleteTextViewEmail.setText(mLoginActivitySharedPreferences.email);
         mEditTextPassword.setText(mLoginActivitySharedPreferences.password);
-
-        // Create main thread handler
-        mMyHandler = new MyHandler(this);
     }
 
     private void login() {
@@ -126,8 +119,38 @@ public class LoginActivity extends MyServiceActivity {
         mLoginActivitySharedPreferences.password = password;
         mLoginActivitySharedPreferences.save();
         mKahlaClient = new KahlaClient(server, email, password);
-        mKahlaClient.mainThreadHandler = mMyHandler;
-        mKahlaClient.loginAsync();
+        mKahlaClient.setOnLoginResponseListener(new KahlaClient.OnLoginResponseListener() {
+            @Override
+            public void onLoginResponse(final AuthByPasswordResponse authByPasswordResponse, KahlaClient kahlaClient) {
+                if (authByPasswordResponse.isResponseOK()) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            loginOK();
+                        }
+                    });
+                } else {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            loginFailed(authByPasswordResponse.message);
+                        }
+                    });
+                }
+            }
+        });
+        mKahlaClient.setOnLoginFailureListener(new KahlaClient.OnFailureListener() {
+            @Override
+            public void onFailure(final Exception e, KahlaClient kahlaClient) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loginFailed(e.getMessage());
+                    }
+                });
+            }
+        });
+        mKahlaClient.login();
     }
 
     private void loginFailed(String message) {
@@ -137,14 +160,11 @@ public class LoginActivity extends MyServiceActivity {
                 .show();
         mButtonLogin.setText(getString(R.string.login));
         mButtonLogin.setEnabled(true);
-        if (mKahlaClient != null) {
-            mKahlaClient.quitSafely();
-            mKahlaClient = null;
-        }
     }
 
     private void loginOK() {
-        if (mMyService != null && mKahlaClient != null) {
+        assert mMyService != null;
+        if (mKahlaClient != null) {
             mMyService.addKahlaClient(mKahlaClient);
             startConversationListActivity();
         }
@@ -157,31 +177,5 @@ public class LoginActivity extends MyServiceActivity {
             startActivity(intent);
         }
         finish();
-    }
-
-    private static class MyHandler extends Handler {
-        private final LoginActivity loginActivity;
-
-        MyHandler(LoginActivity loginActivity) {
-            super(Looper.getMainLooper());
-            this.loginActivity = loginActivity;
-        }
-
-        @Override
-        public void handleMessage(final Message msg) {
-            switch (msg.what) {
-                case KahlaClient.MESSAGE_WHAT_LOGIN_RESPONSE:
-                    AuthByPasswordResponse response = (AuthByPasswordResponse) msg.obj;
-                    if (response.code == 0) {
-                        loginActivity.loginOK();
-                    } else {
-                        loginActivity.loginFailed(response.message);
-                    }
-                    break;
-                case KahlaClient.MESSAGE_WHAT_LOGIN_EXCEPTION:
-                    Exception e = (Exception) msg.obj;
-                    loginActivity.loginFailed(e.toString());
-            }
-        }
     }
 }

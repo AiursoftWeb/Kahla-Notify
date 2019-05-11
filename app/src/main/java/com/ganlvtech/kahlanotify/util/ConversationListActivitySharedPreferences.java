@@ -33,12 +33,12 @@ public class ConversationListActivitySharedPreferences {
         editor.apply();
     }
 
-    public KahlaClient findKahlaClient(List<KahlaClient> kahlaClientList) {
+    public KahlaClient findKahlaClient(@NonNull List<KahlaClient> kahlaClientList) {
         if (kahlaClientList.isEmpty()) {
             return null;
         }
         for (KahlaClient kahlaClient : kahlaClientList) {
-            if (server.equals(kahlaClient.baseUrl) && email.equals(kahlaClient.email)) {
+            if (server.equals(kahlaClient.getServer()) && email.equals(kahlaClient.getEmail())) {
                 return kahlaClient;
             }
         }
@@ -46,7 +46,7 @@ public class ConversationListActivitySharedPreferences {
     }
 
     public void putKahlaClient(@NonNull KahlaClient kahlaClient) {
-        server = kahlaClient.baseUrl;
-        email = kahlaClient.email;
+        server = kahlaClient.getServer();
+        email = kahlaClient.getEmail();
     }
 }

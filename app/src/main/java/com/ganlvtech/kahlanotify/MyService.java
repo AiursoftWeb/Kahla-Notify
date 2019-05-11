@@ -15,42 +15,41 @@ import java.util.List;
 
 public class MyService extends Service {
     @NonNull
-    private IBinder binder = new ServiceBinder();
+    private IBinder mBinder = new ServiceBinder();
     @NonNull
-    private List<KahlaClient> kahlaClientList = new ArrayList<>();
+    private List<KahlaClient> mKahlaClientList = new ArrayList<>();
 
     public void addKahlaClient(@NonNull KahlaClient kahlaClient) {
-        kahlaClientList.add(kahlaClient);
+        mKahlaClientList.add(kahlaClient);
         saveConfig();
     }
 
     public void removeKahlaClient(@NonNull KahlaClient kahlaClient) {
-        kahlaClientList.remove(kahlaClient);
+        mKahlaClientList.remove(kahlaClient);
         saveConfig();
     }
 
     @NonNull
     public List<KahlaClient> getKahlaClientList() {
-        return kahlaClientList;
+        return mKahlaClientList;
     }
 
     private void loadConfig() {
         AccountListSharedPreferences accountListSharedPreferences = new AccountListSharedPreferences(this);
         accountListSharedPreferences.load();
         for (AccountListSharedPreferences.Account account : accountListSharedPreferences.accountList) {
-            KahlaClient kahlaClient = new KahlaClient(account.server, account.email, account.password);
-            kahlaClientList.add(kahlaClient);
+            addKahlaClient(new KahlaClient(account.server, account.email, account.password));
         }
     }
 
     private void saveConfig() {
         AccountListSharedPreferences accountListSharedPreferences = new AccountListSharedPreferences(this);
         accountListSharedPreferences.accountList.clear();
-        for (KahlaClient kahlaClient : kahlaClientList) {
+        for (KahlaClient kahlaClient : mKahlaClientList) {
             AccountListSharedPreferences.Account account = new AccountListSharedPreferences.Account();
-            account.server = kahlaClient.baseUrl;
-            account.email = kahlaClient.email;
-            account.password = kahlaClient.password;
+            account.server = kahlaClient.getServer();
+            account.email = kahlaClient.getEmail();
+            account.password = kahlaClient.getPassword();
             accountListSharedPreferences.accountList.add(account);
         }
         accountListSharedPreferences.save();
@@ -76,7 +75,7 @@ public class MyService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return binder;
+        return mBinder;
     }
 
     class ServiceBinder extends Binder {

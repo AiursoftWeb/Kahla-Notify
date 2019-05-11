@@ -19,16 +19,17 @@ public class AccountListItemAdapter extends IconTitleContentArrayAdapter {
         if (kahlaClient != null) {
             IconTitleContent iconTitleContent = new IconTitleContent();
             iconTitleContent.placeholderResId = R.drawable.icon_default_avatar;
-            iconTitleContent.content = kahlaClient.baseUrl;
-            User user = kahlaClient.myUserInfo;
+            iconTitleContent.content = kahlaClient.getServer();
+            User user = kahlaClient.getMyUserInfo();
             if (user == null) {
-                iconTitleContent.title = kahlaClient.email;
+                iconTitleContent.title = kahlaClient.getEmail();
                 iconTitleContent.iconUrl = null;
             } else {
                 iconTitleContent.title = user.nickName;
                 iconTitleContent.iconUrl = user.getHeadImgFileUrl(kahlaClient.getApiClient().oss());
             }
             iconTitleContent.unreadCount = kahlaClient.getUnreadCount();
+            iconTitleContent.at = kahlaClient.isSomeoneAtMe();
             return iconTitleContent;
         }
         return super.getIconTitleContentItem(position);

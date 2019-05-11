@@ -9,4 +9,5 @@ public class IconTitleContent {
     public int unreadCount;
     public String title;
     public String content;
+    public boolean at;
 }

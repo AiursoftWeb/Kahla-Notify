@@ -7,54 +7,54 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 
 public class ApiClient {
-    private CookieJar cookieJar;
-    private OkHttpClient client;
-    private String baseUrl;
-    private AuthService authService;
-    private FriendshipService friendshipService;
-    private ConversationService conversationService;
-    private OssService ossService;
-    private String ossServiceBaseUrl;
+    private CookieJar mCookieJar;
+    private OkHttpClient mClient;
+    private String mServer;
+    private AuthService mAuthService;
+    private FriendshipService mFriendshipService;
+    private ConversationService mConversationService;
+    private OssService mOssService;
+    private String mOssServiceBaseUrl;
 
-    public ApiClient(String baseUrl, String ossServiceBaseUrl) {
-        cookieJar = new CookieJar();
-        client = new OkHttpClient.Builder()
+    public ApiClient(String server, String ossServer) {
+        mCookieJar = new CookieJar();
+        mClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
-                .cookieJar(cookieJar)
+                .cookieJar(mCookieJar)
                 .build();
-        this.baseUrl = baseUrl;
-        this.ossServiceBaseUrl = ossServiceBaseUrl;
+        mServer = server;
+        mOssServiceBaseUrl = ossServer;
     }
 
-    public ApiClient(String baseUrl) {
-        this(baseUrl, "https://oss.aiursoft.com");
+    public ApiClient(String server) {
+        this(server, "https://oss.aiursoft.com");
     }
 
     public AuthService auth() {
-        if (authService == null) {
-            authService = new AuthService(client, baseUrl);
+        if (mAuthService == null) {
+            mAuthService = new AuthService(mClient, mServer);
         }
-        return authService;
+        return mAuthService;
     }
 
     public FriendshipService friendship() {
-        if (friendshipService == null) {
-            friendshipService = new FriendshipService(client, baseUrl);
+        if (mFriendshipService == null) {
+            mFriendshipService = new FriendshipService(mClient, mServer);
         }
-        return friendshipService;
+        return mFriendshipService;
     }
 
     public ConversationService conversation() {
-        if (conversationService == null) {
-            conversationService = new ConversationService(client, baseUrl);
+        if (mConversationService == null) {
+            mConversationService = new ConversationService(mClient, mServer);
         }
-        return conversationService;
+        return mConversationService;
     }
 
     public OssService oss() {
-        if (ossService == null) {
-            ossService = new OssService(client, ossServiceBaseUrl);
+        if (mOssService == null) {
+            mOssService = new OssService(mClient, mOssServiceBaseUrl);
         }
-        return ossService;
+        return mOssService;
     }
 }
