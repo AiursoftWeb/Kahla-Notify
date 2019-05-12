@@ -16,6 +16,8 @@ import android.widget.TextView;
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.components.AccountListItemAdapter;
 import com.ganlvtech.kahlanotify.components.ContactInfoListItemAdapter;
+import com.ganlvtech.kahlanotify.kahla.WebSocketClient;
+import com.ganlvtech.kahlanotify.kahla.event.BaseEvent;
 import com.ganlvtech.kahlanotify.kahla.models.ContactInfo;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
@@ -117,7 +119,7 @@ public class ConversationListActivity extends MyServiceActivity {
         mSwipeRefreshLayout.setRefreshing(true);
         assert mMyService != null;
         List<KahlaClient> kahlaClientList = mMyService.getKahlaClientList();
-        for (KahlaClient kahlaClient : kahlaClientList) {
+        for (final KahlaClient kahlaClient : kahlaClientList) {
             kahlaClient.setOnFetchContactInfoListResponseListener(new KahlaClient.OnFetchContactInfoListResponseListener() {
                 @Override
                 public void onFetchContactInfoListResponse(MyFriendsResponse meResponse, final KahlaClient kahlaClient) {
@@ -125,7 +127,7 @@ public class ConversationListActivity extends MyServiceActivity {
                         @Override
                         public void run() {
                             updateKahlaClientList();
-                            if (mKahlaClient == kahlaClient) {
+                            if (kahlaClient == mKahlaClient) {
                                 updateContactInfoList();
                             }
                         }
@@ -143,6 +145,21 @@ public class ConversationListActivity extends MyServiceActivity {
                     });
                 }
             });
+            kahlaClient.connectToPusher();
+            kahlaClient.setWebSocketClientOnDecodedMessageListener(new WebSocketClient.OnDecodedMessageListener() {
+                @Override
+                public void onDecodedMessage(BaseEvent event) {
+                    if (kahlaClient == mKahlaClient) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mSwipeRefreshLayout.setRefreshing(true);
+                            }
+                        });
+                        mKahlaClient.fetchContactInfoList();
+                    }
+                }
+            });
             kahlaClient.fetchContactInfoList();
             kahlaClient.fetchMyUserInfo();
         }
@@ -158,7 +175,7 @@ public class ConversationListActivity extends MyServiceActivity {
         mAccountListItemAdapter.clear();
         mAccountListItemAdapter.addAll(kahlaClientList);
         if (mKahlaClient == null) {
-            KahlaClient kahlaClient = mConversationListActivitySharedPreferences.findKahlaClient(kahlaClientList);
+            KahlaClient kahlaClient = mMyService.getKahlaClientByServerEmail(mConversationListActivitySharedPreferences.server, mConversationListActivitySharedPreferences.email);
             if (kahlaClient == null) {
                 kahlaClient = kahlaClientList.get(0);
             }

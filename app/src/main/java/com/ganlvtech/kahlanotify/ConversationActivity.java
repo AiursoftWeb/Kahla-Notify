@@ -17,6 +17,10 @@ import android.widget.Toast;
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.components.IconTitleContent;
 import com.ganlvtech.kahlanotify.components.MessageListItemAdapter;
+import com.ganlvtech.kahlanotify.kahla.WebSocketClient;
+import com.ganlvtech.kahlanotify.kahla.event.BaseEvent;
+import com.ganlvtech.kahlanotify.kahla.event.NewMessageEvent;
+import com.ganlvtech.kahlanotify.kahla.event.TimerUpdatedEvent;
 import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 import com.ganlvtech.kahlanotify.kahla.models.ContactInfo;
 import com.ganlvtech.kahlanotify.kahla.models.Message;
@@ -37,6 +41,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public class ConversationActivity extends MyServiceActivity {
+    public static final String INTENT_EXTRA_NAME_SERVER = "server";
+    public static final String INTENT_EXTRA_NAME_EMAIL = "email";
     public static final String INTENT_EXTRA_NAME_CONVERSATION_ID = "conversationId";
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private TextView mToolbarTextViewTitle;
@@ -46,6 +52,8 @@ public class ConversationActivity extends MyServiceActivity {
     private Button mButtonSend;
     private MessageListItemAdapter mMessageListItemAdapter;
     private ConversationListActivitySharedPreferences mConversationListActivitySharedPreferences;
+    private String mServer;
+    private String mEmail;
     private int mConversationId;
     @Nullable
     private KahlaClient mKahlaClient;
@@ -57,11 +65,16 @@ public class ConversationActivity extends MyServiceActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Load shared preferences
-        mConversationListActivitySharedPreferences = new ConversationListActivitySharedPreferences(this);
-        mConversationListActivitySharedPreferences.load();
-
         // Get intent extras
+        mServer = getIntent().getStringExtra(INTENT_EXTRA_NAME_SERVER);
+        mEmail = getIntent().getStringExtra(INTENT_EXTRA_NAME_EMAIL);
+        if (mServer == null || mEmail == null) {
+            // Load shared preferences
+            mConversationListActivitySharedPreferences = new ConversationListActivitySharedPreferences(this);
+            mConversationListActivitySharedPreferences.load();
+            mServer = mConversationListActivitySharedPreferences.server;
+            mEmail = mConversationListActivitySharedPreferences.email;
+        }
         mConversationId = getIntent().getIntExtra(INTENT_EXTRA_NAME_CONVERSATION_ID, 0);
 
         // Get ClipboardManager
@@ -155,7 +168,7 @@ public class ConversationActivity extends MyServiceActivity {
         super.onServiceConnected();
         assert mMyService != null;
         List<KahlaClient> kahlaClientList = mMyService.getKahlaClientList();
-        mKahlaClient = mConversationListActivitySharedPreferences.findKahlaClient(kahlaClientList);
+        mKahlaClient = mMyService.getKahlaClientByServerEmail(mServer, mEmail);
         if (mKahlaClient == null) {
             finish();
             return;
@@ -204,6 +217,38 @@ public class ConversationActivity extends MyServiceActivity {
                 });
             }
         });
+        mKahlaClient.connectToPusher();
+        mKahlaClient.setWebSocketClientOnDecodedMessageListener(new WebSocketClient.OnDecodedMessageListener() {
+            @Override
+            public void onDecodedMessage(BaseEvent event) {
+                switch (event.type) {
+                    case BaseEvent.EVENT_TYPE_NEW_MESSAGE:
+                        NewMessageEvent newMessageEvent = (NewMessageEvent) event;
+                        if (newMessageEvent.conversationId == mConversationId) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mSwipeRefreshLayout.setRefreshing(true);
+                                }
+                            });
+                            mKahlaClient.fetchMessage(mConversationId);
+                        }
+                        break;
+                    case BaseEvent.EVENT_TYPE_TIMER_UPDATED:
+                        TimerUpdatedEvent timerUpdatedEvent = (TimerUpdatedEvent) event;
+                        if (timerUpdatedEvent.conversationID == mConversationId) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mSwipeRefreshLayout.setRefreshing(true);
+                                }
+                            });
+                            mKahlaClient.fetchMessage(mConversationId);
+                        }
+                        break;
+                }
+            }
+        });
         mSwipeRefreshLayout.setRefreshing(true);
         mKahlaClient.fetchMessage(mConversationId);
     }
@@ -232,6 +277,7 @@ public class ConversationActivity extends MyServiceActivity {
             }
         }
         mSwipeRefreshLayout.setRefreshing(false);
+        mListViewConversations.setSelection(mMessageListItemAdapter.getCount() - 1);
     }
 
     private void copyMessage(Message message) {

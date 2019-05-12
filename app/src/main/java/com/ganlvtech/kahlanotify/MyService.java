@@ -5,10 +5,12 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.util.AccountListSharedPreferences;
+import com.ganlvtech.kahlanotify.util.Notifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,7 @@ public class MyService extends Service {
 
     public void addKahlaClient(@NonNull KahlaClient kahlaClient) {
         mKahlaClientList.add(kahlaClient);
+        kahlaClient.setNotifier(new Notifier(this));
         saveConfig();
     }
 
@@ -32,6 +35,16 @@ public class MyService extends Service {
     @NonNull
     public List<KahlaClient> getKahlaClientList() {
         return mKahlaClientList;
+    }
+
+    @Nullable
+    public KahlaClient getKahlaClientByServerEmail(String server, String email) {
+        for (KahlaClient kahlaClient : mKahlaClientList) {
+            if (server.equals(kahlaClient.getServer()) && email.equals(kahlaClient.getEmail())) {
+                return kahlaClient;
+            }
+        }
+        return null;
     }
 
     private void loadConfig() {
