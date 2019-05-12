@@ -55,6 +55,7 @@ public class ConversationListActivity extends MyServiceActivity {
 
         StatusBarUtil.setColorNoTranslucentForDrawerLayout(this, mDrawerLayoutConversationListActivity, getColor(R.color.main_theme));
 
+        mSwipeRefreshLayout.setColorSchemeColors(getColor(R.color.main_theme));
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {

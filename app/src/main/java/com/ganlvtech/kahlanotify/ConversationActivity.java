@@ -75,6 +75,7 @@ public class ConversationActivity extends MyServiceActivity {
         mEditTextSend = findViewById(R.id.editTextSend);
         mButtonSend = findViewById(R.id.buttonSend);
 
+        mSwipeRefreshLayout.setColorSchemeColors(getColor(R.color.main_theme));
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
