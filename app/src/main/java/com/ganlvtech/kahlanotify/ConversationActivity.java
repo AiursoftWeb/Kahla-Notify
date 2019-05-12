@@ -2,6 +2,7 @@ package com.ganlvtech.kahlanotify;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ganlvtech.kahlanotify.client.KahlaClient;
+import com.ganlvtech.kahlanotify.components.IconTitleContent;
 import com.ganlvtech.kahlanotify.components.MessageListItemAdapter;
 import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 import com.ganlvtech.kahlanotify.kahla.models.ContactInfo;
@@ -84,6 +86,15 @@ public class ConversationActivity extends MyServiceActivity {
 
         mMessageListItemAdapter = new MessageListItemAdapter(this);
         mListViewConversations.setAdapter(mMessageListItemAdapter);
+        mListViewConversations.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                IconTitleContent iconTitleContentItem = mMessageListItemAdapter.getIconTitleContentItem(position);
+                if (iconTitleContentItem != null) {
+                    showImage(iconTitleContentItem);
+                }
+            }
+        });
         mListViewConversations.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
@@ -227,5 +238,13 @@ public class ConversationActivity extends MyServiceActivity {
             mClipboardManager.setPrimaryClip(ClipData.newPlainText("Kahla Notify Message", message.getContentDecrypted(mContactInfo.aesKey)));
         }
         Toast.makeText(this, "Message has been copied", Toast.LENGTH_SHORT).show();
+    }
+
+    private void showImage(IconTitleContent iconTitleContentItem) {
+        if (iconTitleContentItem.contentImageUrl.length() > 0) {
+            Intent intent = new Intent(this, ImageActivity.class);
+            intent.putExtra(ImageActivity.INTENT_EXTRA_NAME_IMAGE_URL, iconTitleContentItem.contentImageUrl);
+            startActivity(intent);
+        }
     }
 }

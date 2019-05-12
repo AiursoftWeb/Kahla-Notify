@@ -17,4 +17,9 @@
         <item name="android:statusBarColor">@color/main_theme</item>
         <item name="android:windowSoftInputMode">adjustResize</item>
     </style>
+
+    <style name="AppTheme.ImageActivity" parent="android:Theme.Material.Light.NoActionBar.Fullscreen">
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:background">@android:color/black</item>
+    </style>
 </resources>
