@@ -21,7 +21,6 @@ import com.ganlvtech.kahlanotify.kahla.event.BaseEvent;
 import com.ganlvtech.kahlanotify.kahla.models.ContactInfo;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
-import com.ganlvtech.kahlanotify.legacy.MainActivity;
 import com.ganlvtech.kahlanotify.util.ConversationListActivitySharedPreferences;
 import com.jaeger.library.StatusBarUtil;
 
@@ -34,7 +33,6 @@ public class ConversationListActivity extends MyServiceActivity {
     private ListView mListViewAccounts;
     private TextView mToolbalTextViewTitle;
     private TextView mToolbalTextViewSubtitle;
-    private TextView mTextViewLegacy;
     private TextView mTextViewNewAccount;
     private ContactInfoListItemAdapter mContactInfoListItemAdapter;
     private AccountListItemAdapter mAccountListItemAdapter;
@@ -52,7 +50,6 @@ public class ConversationListActivity extends MyServiceActivity {
         mToolbalTextViewSubtitle = findViewById(R.id.toolbarTextViewSubtitle);
         mListViewConversations = findViewById(R.id.listViewConversations);
         mListViewAccounts = findViewById(R.id.listViewAccounts);
-        mTextViewLegacy = findViewById(R.id.textViewLegacy);
         mTextViewNewAccount = findViewById(R.id.textViewNewAccount);
 
         StatusBarUtil.setColorNoTranslucentForDrawerLayout(this, mDrawerLayoutConversationListActivity, getColor(R.color.main_theme));
@@ -64,13 +61,6 @@ public class ConversationListActivity extends MyServiceActivity {
                 if (mKahlaClient != null) {
                     mKahlaClient.fetchContactInfoList();
                 }
-            }
-        });
-        mTextViewLegacy.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(ConversationListActivity.this, MainActivity.class);
-                startActivity(intent);
             }
         });
 

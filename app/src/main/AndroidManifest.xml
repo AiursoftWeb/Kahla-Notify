@@ -37,12 +37,6 @@
         <activity
             android:name=".ImageActivity"
             android:theme="@style/AppTheme.ImageActivity" />
-        <activity android:name=".legacy.MainActivity" />
-
-        <service
-            android:name=".legacy.KahlaService"
-            android:enabled="true"
-            android:exported="false" />
         <service
             android:name=".MyService"
             android:enabled="true"
