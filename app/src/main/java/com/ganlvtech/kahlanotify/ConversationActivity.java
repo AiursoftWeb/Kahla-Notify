@@ -153,6 +153,7 @@ public class ConversationActivity extends MyServiceActivity {
             finish();
             return;
         }
+        mContactInfo.unReadAmount = 0;
         updateTitle();
         updateMessageList();
         mKahlaClient.setOnFetchContactInfoListResponseListener(new KahlaClient.OnFetchContactInfoListResponseListener() {
