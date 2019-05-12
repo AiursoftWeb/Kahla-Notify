@@ -46,7 +46,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_weight="1"
-                    android:text="v2.0-d5d240d"
+                    android:text="@string/version_number"
                     android:textSize="8sp" />
             </LinearLayout>
         </LinearLayout>
@@ -66,7 +66,7 @@
         android:layout_height="wrap_content"
         android:background="#adceff"
         android:padding="16dp"
-        android:text="Add New Account" />
+        android:text="@string/add_new_account" />
 
     <ListView
         android:id="@+id/listViewAccounts"

@@ -13,4 +13,6 @@
     <string name="sending___">Sending...</string>
     <string name="icon">Icon</string>
     <string name="at">\@</string>
+    <string name="version_number">v2.0-12f428c</string>
+    <string name="add_new_account">Add New Account</string>
 </resources>
