@@ -34,15 +34,15 @@ import okhttp3.Response;
 
 public class KahlaClient {
     @NonNull
+    private final ApiClient mApiClient;
+    @NonNull
+    private final WebSocketClient mWebSocketClient;
+    @NonNull
     private String mServer;
     @NonNull
     private String mEmail;
     @NonNull
     private String mPassword;
-    @NonNull
-    private ApiClient mApiClient;
-    @Nullable
-    private WebSocketClient mWebSocketClient;
     @Nullable
     private OnLoginResponseListener mOnLoginResponseListener;
     @Nullable
@@ -74,23 +74,6 @@ public class KahlaClient {
     private boolean mIsLogin;
     @Nullable
     private User mMyUserInfo;
-    @NonNull
-    private WebSocketClient.OnDecodedMessageListener mWebSocketClientOnDecodedMessageNotifyListener = new WebSocketClient.OnDecodedMessageListener() {
-        @Override
-        public void onDecodedMessage(BaseEvent event) {
-            if (event.type == BaseEvent.EVENT_TYPE_NEW_MESSAGE) {
-                NewMessageEvent newMessageEvent = (NewMessageEvent) event;
-                if (mNotifier != null) {
-                    if (mMyUserInfo == null || !newMessageEvent.sender.id.equals(mMyUserInfo.id)) {
-                        mNotifier.notify(newMessageEvent.sender.nickName, newMessageEvent.getContentDecrypted(), mServer, mEmail, newMessageEvent.conversationId);
-                    }
-                }
-            }
-            if (mWebSocketClientOnDecodedMessageListener != null) {
-                mWebSocketClientOnDecodedMessageListener.onDecodedMessage(event);
-            }
-        }
-    };
     /**
      * Map conversation id to message list
      */
@@ -104,6 +87,23 @@ public class KahlaClient {
         mEmail = email;
         mPassword = password;
         mApiClient = new ApiClient(mServer);
+        mWebSocketClient = new WebSocketClient();
+        mWebSocketClient.setOnDecodedMessageListener(new WebSocketClient.OnDecodedMessageListener() {
+            @Override
+            public void onDecodedMessage(BaseEvent event) {
+                if (event.type == BaseEvent.EVENT_TYPE_NEW_MESSAGE) {
+                    NewMessageEvent newMessageEvent = (NewMessageEvent) event;
+                    if (mNotifier != null) {
+                        if (mMyUserInfo == null || !newMessageEvent.sender.id.equals(mMyUserInfo.id)) {
+                            mNotifier.notify(newMessageEvent.sender.nickName, newMessageEvent.getContentDecrypted(), mServer, mEmail, newMessageEvent.conversationId);
+                        }
+                    }
+                }
+                if (mWebSocketClientOnDecodedMessageListener != null) {
+                    mWebSocketClientOnDecodedMessageListener.onDecodedMessage(event);
+                }
+            }
+        });
     }
 
     public void setNotifier(@NonNull Notifier notifier) {
@@ -139,7 +139,7 @@ public class KahlaClient {
         return mApiClient;
     }
 
-    @Nullable
+    @NonNull
     public WebSocketClient getWebSocketClient() {
         return mWebSocketClient;
     }
@@ -238,11 +238,12 @@ public class KahlaClient {
         mOnInitPusherFailureListener = onInitPusherFailureListener;
     }
 
+    /**
+     * You shouldn't use WebSocketClient.setOnDecodedMessageListener, because KahlaClient is the proxy of it to send to notifier when message comes.
+     * Use this method just like WebSocketClient.setOnDecodedMessageListener.
+     */
     public void setWebSocketClientOnDecodedMessageListener(final WebSocketClient.OnDecodedMessageListener onDecodedMessageListener) {
         mWebSocketClientOnDecodedMessageListener = onDecodedMessageListener;
-        if (mWebSocketClient != null) {
-            mWebSocketClient.setOnDecodedMessageListener(mWebSocketClientOnDecodedMessageListener);
-        }
     }
 
     public void login() {
@@ -478,11 +479,8 @@ public class KahlaClient {
                                 try {
                                     InitPusherResponse initPusherResponse = AuthService.parseInitPusherResponse(response);
                                     if (initPusherResponse.isResponseOK()) {
-                                        if (mWebSocketClient != null) {
-                                            mWebSocketClient.stop();
-                                        }
-                                        mWebSocketClient = new WebSocketClient(initPusherResponse.serverPath);
-                                        mWebSocketClient.setOnDecodedMessageListener(mWebSocketClientOnDecodedMessageNotifyListener);
+                                        mWebSocketClient.stop();
+                                        mWebSocketClient.setUrl(initPusherResponse.serverPath);
                                         if (connectInstantly) {
                                             mWebSocketClient.connect();
                                         }
@@ -507,7 +505,8 @@ public class KahlaClient {
     }
 
     public void initPusherIfNeeded(boolean connectInstantly) {
-        if (mWebSocketClient == null) {
+        if (mWebSocketClient.getState() == WebSocketClient.WEB_SOCKET_STATE_CLOSED
+                || mWebSocketClient.getState() == WebSocketClient.WEB_SOCKET_STATE_INIT) {
             initPusher(connectInstantly);
         } else if (mWebSocketClient.getRetryCount() > 200) {
             initPusher(connectInstantly);

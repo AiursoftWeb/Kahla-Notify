@@ -20,8 +20,10 @@ public class WebSocketClient {
     public static final int WEB_SOCKET_STATE_CONNECTED = WEB_SOCKET_STATE_CONNECTING + 1;
     public static final int WEB_SOCKET_STATE_CLOSING = WEB_SOCKET_STATE_CONNECTED + 1;
     public static final int WEB_SOCKET_STATE_CLOSED = WEB_SOCKET_STATE_CLOSING + 1;
+    public static final int WEB_SOCKET_STATE_RETRY = WEB_SOCKET_STATE_CLOSED + 1;
     private OkHttpClient mClient;
     private String mUrl;
+    @Nullable
     private WebSocket mWebSocket;
     @Nullable
     private OnOpenListener mOnOpenListener;
@@ -38,7 +40,6 @@ public class WebSocketClient {
     private boolean mAutoRetry = true;
     private int mRetryTimeout = 0;
     private int mRetryCount = 0;
-
     private int mState = WEB_SOCKET_STATE_INIT;
 
     private WebSocketListener mWebSocketListener = new WebSocketListener() {
@@ -85,7 +86,11 @@ public class WebSocketClient {
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-            mState = WEB_SOCKET_STATE_CLOSED;
+            if (mAutoRetry) {
+                mState = WEB_SOCKET_STATE_RETRY;
+            } else {
+                mState = WEB_SOCKET_STATE_CLOSED;
+            }
             mRetryCount++;
             if (mOnFailureListener != null) {
                 mOnFailureListener.onFailure(webSocket, t, response);
@@ -112,15 +117,18 @@ public class WebSocketClient {
         }
     };
 
-    public WebSocketClient(String url) {
+    public WebSocketClient() {
         mClient = new OkHttpClient.Builder()
                 .pingInterval(45, TimeUnit.SECONDS)
                 .build();
-        mUrl = url;
     }
 
     public String getUrl() {
         return mUrl;
+    }
+
+    public void setUrl(String url) {
+        mUrl = url;
     }
 
     public WebSocket getWebSocket() {
@@ -135,6 +143,11 @@ public class WebSocketClient {
         return mRetryCount;
     }
 
+    public void connect(String url) {
+        setUrl(url);
+        connect();
+    }
+
     public void connect() {
         mAutoRetry = true;
         Request request = new Request.Builder()
@@ -147,7 +160,10 @@ public class WebSocketClient {
     public void stop() {
         mState = WEB_SOCKET_STATE_CLOSING;
         mAutoRetry = false;
-        mWebSocket.cancel();
+        if (mWebSocket != null) {
+            mWebSocket.cancel();
+            mWebSocket = null;
+        }
     }
 
     public void setOnOpenListener(OnOpenListener onOpenListener) {

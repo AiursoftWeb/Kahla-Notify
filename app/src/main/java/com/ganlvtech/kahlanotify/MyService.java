@@ -9,21 +9,54 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.ganlvtech.kahlanotify.client.KahlaClient;
+import com.ganlvtech.kahlanotify.kahla.WebSocketClient;
 import com.ganlvtech.kahlanotify.util.AccountListSharedPreferences;
 import com.ganlvtech.kahlanotify.util.Notifier;
+import com.ganlvtech.kahlanotify.util.Toaster;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.Response;
+import okhttp3.WebSocket;
 
 public class MyService extends Service {
     @NonNull
     private IBinder mBinder = new ServiceBinder();
     @NonNull
     private List<KahlaClient> mKahlaClientList = new ArrayList<>();
+    private Notifier mNotifier;
+    private Toaster mToaster;
 
-    public void addKahlaClient(@NonNull KahlaClient kahlaClient) {
+    public void addKahlaClient(@NonNull final KahlaClient kahlaClient) {
         mKahlaClientList.add(kahlaClient);
-        kahlaClient.setNotifier(new Notifier(this));
+        kahlaClient.getWebSocketClient().setOnOpenListener(new WebSocketClient.OnOpenListener() {
+            @Override
+            public void onOpen(WebSocket webSocket, Response response) {
+                String account;
+                if (kahlaClient.getMyUserInfo() != null) {
+                    account = kahlaClient.getMyUserInfo().nickName;
+                } else {
+                    account = kahlaClient.getEmail();
+                }
+                mToaster.toast(String.format("%s (%s) connected", account, kahlaClient.getServer()));
+            }
+        });
+        kahlaClient.getWebSocketClient().setOnFailureListener(new WebSocketClient.OnFailureListener() {
+            @Override
+            public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+                if (kahlaClient.getWebSocketClient().getRetryCount() <= 1) {
+                    String account;
+                    if (kahlaClient.getMyUserInfo() != null) {
+                        account = kahlaClient.getMyUserInfo().nickName;
+                    } else {
+                        account = kahlaClient.getEmail();
+                    }
+                    mToaster.toast(String.format("%s (%s) disconnected", account, kahlaClient.getServer()));
+                }
+            }
+        });
+        kahlaClient.setNotifier(mNotifier);
         saveConfig();
     }
 
@@ -71,6 +104,8 @@ public class MyService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        mNotifier = new Notifier(this);
+        mToaster = new Toaster(this);
         loadConfig();
     }
 
