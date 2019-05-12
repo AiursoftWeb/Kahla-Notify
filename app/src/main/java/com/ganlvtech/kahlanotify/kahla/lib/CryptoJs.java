@@ -27,7 +27,7 @@ public class CryptoJs {
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[8];
         random.nextBytes(salt);
-        byte[] password = passwordHex.getBytes("UTF-8");
+        byte[] password = passwordHex.getBytes();
         int keySize = 8; // 8 words = 256-bit
         int ivSize = 4; // 4 words = 128-bit
         byte[] javaKey = new byte[keySize * 4];
@@ -42,7 +42,7 @@ public class CryptoJs {
         buf.put("Salted__".getBytes());
         buf.put(salt);
         buf.put(cipherText);
-        return Base64.encodeToString(buf.array(), Base64.DEFAULT);
+        return Base64.encodeToString(buf.array(), Base64.NO_WRAP);
     }
 
     public static byte[] aesDecrypt(String cipherTextBase64, String passwordHex) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, UnsupportedEncodingException {
@@ -54,7 +54,7 @@ public class CryptoJs {
         }
         byte[] salt = Arrays.copyOfRange(cipherText, 8, 16);
         cipherText = Arrays.copyOfRange(cipherText, 16, cipherText.length);
-        byte[] password = passwordHex.getBytes("UTF-8");
+        byte[] password = passwordHex.getBytes();
         int keySize = 8; // 8 words = 256-bit
         int ivSize = 4; // 4 words = 128-bit
         byte[] javaKey = new byte[keySize * 4];
