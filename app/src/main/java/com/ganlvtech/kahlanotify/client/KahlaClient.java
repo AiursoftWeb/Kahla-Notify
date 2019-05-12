@@ -242,6 +242,10 @@ public class KahlaClient {
     }
 
     public void fetchMyUserInfo() {
+        fetchMyUserInfo(true);
+    }
+
+    private void fetchMyUserInfo(final boolean autoLoginRetry) {
         mustLogin(new OnLoginListener() {
             @Override
             public void onLogin() {
@@ -260,7 +264,15 @@ public class KahlaClient {
                                         mMyUserInfo = meResponse.value;
                                     }
                                     onFetchMyUserInfoResponse(meResponse);
-                                } catch (ResponseCodeHttpUnauthorizedException | JSONException e) {
+                                } catch (ResponseCodeHttpUnauthorizedException e) {
+                                    e.printStackTrace();
+                                    mIsLogin = false;
+                                    if (autoLoginRetry) {
+                                        fetchMyUserInfo(false);
+                                    } else {
+                                        onFetchMyUserInfoFailure(e);
+                                    }
+                                } catch (JSONException e) {
                                     e.printStackTrace();
                                     onFetchMyUserInfoFailure(e);
                                 }
@@ -271,6 +283,10 @@ public class KahlaClient {
     }
 
     public void fetchContactInfoList() {
+        fetchContactInfoList(true);
+    }
+
+    private void fetchContactInfoList(final boolean autoLoginRetry) {
         mustLogin(new OnLoginListener() {
             @Override
             public void onLogin() {
@@ -289,7 +305,15 @@ public class KahlaClient {
                                         mContactInfoList = myFriendsResponse.items;
                                     }
                                     onFetchContactInfoListResponse(myFriendsResponse);
-                                } catch (ResponseCodeHttpUnauthorizedException | JSONException e) {
+                                } catch (ResponseCodeHttpUnauthorizedException e) {
+                                    e.printStackTrace();
+                                    mIsLogin = false;
+                                    if (autoLoginRetry) {
+                                        fetchContactInfoList(false);
+                                    } else {
+                                        onFetchContactInfoListFailure(e);
+                                    }
+                                } catch (JSONException e) {
                                     e.printStackTrace();
                                     onFetchContactInfoListFailure(e);
                                 }
@@ -300,6 +324,10 @@ public class KahlaClient {
     }
 
     public void fetchMessage(final int conversationId) {
+        fetchMessage(conversationId, true);
+    }
+
+    private void fetchMessage(final int conversationId, final boolean autoLoginRetry) {
         mustLogin(new OnLoginListener() {
             @Override
             public void onLogin() {
@@ -318,7 +346,15 @@ public class KahlaClient {
                                         mConversationMessageMap.put(conversationId, getMessageResponse.items);
                                     }
                                     onFetchMessageResponse(getMessageResponse);
-                                } catch (ResponseCodeHttpUnauthorizedException | JSONException e) {
+                                } catch (ResponseCodeHttpUnauthorizedException e) {
+                                    e.printStackTrace();
+                                    mIsLogin = false;
+                                    if (autoLoginRetry) {
+                                        fetchMessage(conversationId, false);
+                                    } else {
+                                        onFetchMessageFailure(e);
+                                    }
+                                } catch (JSONException e) {
                                     e.printStackTrace();
                                     onFetchMessageFailure(e);
                                 }
@@ -329,6 +365,10 @@ public class KahlaClient {
     }
 
     public void sendMessage(final int conversationId, final String content) {
+        sendMessage(conversationId, content, true);
+    }
+
+    private void sendMessage(final int conversationId, final String content, final boolean autoLoginRetry) {
         mustLogin(new OnLoginListener() {
             @Override
             public void onLogin() {
@@ -344,7 +384,15 @@ public class KahlaClient {
                                 try {
                                     SendMessageResponse sendMessageResponse = ConversationService.parseSendMessageResponse(response);
                                     onSendMessageResponse(sendMessageResponse);
-                                } catch (ResponseCodeHttpUnauthorizedException | JSONException e) {
+                                } catch (ResponseCodeHttpUnauthorizedException e) {
+                                    e.printStackTrace();
+                                    mIsLogin = false;
+                                    if (autoLoginRetry) {
+                                        sendMessage(conversationId, content, false);
+                                    } else {
+                                        onSendMessageFailure(e);
+                                    }
+                                } catch (JSONException e) {
                                     e.printStackTrace();
                                     onSendMessageFailure(e);
                                 }
