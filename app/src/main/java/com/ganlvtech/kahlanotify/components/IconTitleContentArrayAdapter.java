@@ -34,6 +34,7 @@ public class IconTitleContentArrayAdapter extends ArrayAdapter {
         TextView textViewContent = view.findViewById(R.id.textViewContent);
         TextView textViewUnreadCount = view.findViewById(R.id.textViewUnreadCount);
         TextView textViewAt = view.findViewById(R.id.textViewAt);
+        ImageView imageViewImage = view.findViewById(R.id.imageViewImage);
 
         IconTitleContent item = getIconTitleContentItem(position);
         if (item != null) {
@@ -53,6 +54,14 @@ public class IconTitleContentArrayAdapter extends ArrayAdapter {
                 textViewAt.setVisibility(View.VISIBLE);
             } else {
                 textViewAt.setVisibility(View.GONE);
+            }
+            if (item.contentImageUrl.length() > 0) {
+                Picasso.get()
+                        .load(item.contentImageUrl)
+                        .into(imageViewImage);
+                imageViewImage.setVisibility(View.VISIBLE);
+            } else {
+                imageViewImage.setVisibility(View.GONE);
             }
         }
         return view;

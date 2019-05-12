@@ -114,7 +114,7 @@ public class KahlaClient {
     }
 
     @Nullable
-    public ContactInfo findConversationById(int conversationId) {
+    public ContactInfo getConversationById(int conversationId) {
         if (mContactInfoList == null) {
             return null;
         }

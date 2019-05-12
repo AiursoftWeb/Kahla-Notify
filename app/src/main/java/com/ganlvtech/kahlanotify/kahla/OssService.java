@@ -20,12 +20,26 @@ public class OssService extends BaseService {
                 .build();
     }
 
+    public HttpUrl newDownloadFromKeyUrl(int headImgFileKey) {
+        return newHttpUrlBuilder("/Download/FromKey")
+                .addPathSegment(String.valueOf(headImgFileKey))
+                .build();
+    }
+
     public String getDownloadFromKeyUrl(int headImgFileKey, int w, int h) {
         return newDownloadFromKeyUrl(headImgFileKey, w, h).toString();
     }
 
+    public String getDownloadFromKeyUrl(int headImgFileKey) {
+        return newDownloadFromKeyUrl(headImgFileKey).toString();
+    }
+
     public Call newDownloadFromKeyCall(int headImgFileKey, int w, int h) {
         return newGetCall(newDownloadFromKeyUrl(headImgFileKey, w, h));
+    }
+
+    public Call newDownloadFromKeyCall(int headImgFileKey) {
+        return newGetCall(newDownloadFromKeyUrl(headImgFileKey));
     }
 
     public byte[] downloadFromKey(int headImgFileKey, int w, int h) throws IOException, NullPointerException {

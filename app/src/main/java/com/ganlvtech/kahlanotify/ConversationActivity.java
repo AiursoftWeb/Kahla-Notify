@@ -148,7 +148,7 @@ public class ConversationActivity extends MyServiceActivity {
             finish();
             return;
         }
-        mContactInfo = mKahlaClient.findConversationById(mConversationId);
+        mContactInfo = mKahlaClient.getConversationById(mConversationId);
         if (mContactInfo == null) {
             finish();
             return;
@@ -224,7 +224,7 @@ public class ConversationActivity extends MyServiceActivity {
 
     private void copyMessage(Message message) {
         if (mContactInfo != null) {
-            mClipboardManager.setPrimaryClip(ClipData.newPlainText("Kahla Notify Message", message.getContent(mContactInfo.aesKey)));
+            mClipboardManager.setPrimaryClip(ClipData.newPlainText("Kahla Notify Message", message.getContentDecrypted(mContactInfo.aesKey)));
         }
         Toast.makeText(this, "Message has been copied", Toast.LENGTH_SHORT).show();
     }

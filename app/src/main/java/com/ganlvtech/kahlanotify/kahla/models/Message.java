@@ -1,6 +1,7 @@
 package com.ganlvtech.kahlanotify.kahla.models;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 import com.ganlvtech.kahlanotify.kahla.lib.DateParser;
@@ -51,11 +52,33 @@ public class Message {
         }
     }
 
+    @Nullable
+    public static Image parseContentImage(String contentDecrypted) {
+        if (contentDecrypted.startsWith("[img]")) {
+            String[] parts = contentDecrypted.substring(5).split("-");
+            if (parts.length > 0) {
+                Image image = new Image();
+                image.ossFileKey = Integer.parseInt(parts[0]);
+                if (parts.length > 1) {
+                    image.width = Integer.parseInt(parts[1]);
+                    if (parts.length > 2) {
+                        image.height = Integer.parseInt(parts[2]);
+                        if (parts.length > 3) {
+                            image.orientation = Integer.parseInt(parts[3]);
+                        }
+                    }
+                }
+                return image;
+            }
+        }
+        return null;
+    }
+
     public Date getSendTime() {
         return DateParser.tryParse(sendTime);
     }
 
-    public String getContent(String aesKey) {
+    public String getContentDecrypted(String aesKey) {
         try {
             byte[] bytes = CryptoJs.aesDecrypt(content, aesKey);
             return new String(bytes, "UTF-8");
@@ -72,6 +95,13 @@ public class Message {
             }
         }
         return false;
+    }
+
+    public static class Image {
+        public int ossFileKey;
+        public int width;
+        public int height;
+        public int orientation;
     }
 
     public class At {

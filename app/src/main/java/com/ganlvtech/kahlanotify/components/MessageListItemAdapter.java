@@ -39,7 +39,11 @@ public class MessageListItemAdapter extends IconTitleContentArrayAdapter {
             iconTitleContent.iconUrl = message.sender.getHeadImgFileUrl(mKahlaClient.getApiClient().oss());
             iconTitleContent.title = message.sender.nickName;
             if (mContactInfo != null) {
-                iconTitleContent.content = message.getContent(mContactInfo.aesKey);
+                iconTitleContent.content = message.getContentDecrypted(mContactInfo.aesKey);
+                Message.Image image = Message.parseContentImage(iconTitleContent.content);
+                if (image != null) {
+                    iconTitleContent.contentImageUrl = mKahlaClient.getApiClient().oss().getDownloadFromKeyUrl(image.ossFileKey);
+                }
             } else {
                 iconTitleContent.content = message.content;
             }
