@@ -171,20 +171,16 @@ public class ConversationListActivity extends MyServiceActivity {
             }
             setCurrentKahlaClient(kahlaClient);
         }
-        for (KahlaClient kahlaClient : kahlaClientList) {
-            if (kahlaClient == mKahlaClient) {
-                if (kahlaClient.getMyUserInfo() != null) {
-                    mToolbalTextViewTitle.setText(kahlaClient.getMyUserInfo().nickName);
-                } else {
-                    mToolbalTextViewTitle.setText(kahlaClient.getEmail());
-                }
-                mToolbalTextViewSubtitle.setText(kahlaClient.getServer());
-            }
-        }
     }
 
     private void setCurrentKahlaClient(@NonNull KahlaClient kahlaClient) {
         mKahlaClient = kahlaClient;
+        if (kahlaClient.getMyUserInfo() != null) {
+            mToolbalTextViewTitle.setText(kahlaClient.getMyUserInfo().nickName);
+        } else {
+            mToolbalTextViewTitle.setText(kahlaClient.getEmail());
+        }
+        mToolbalTextViewSubtitle.setText(kahlaClient.getServer());
         updateContactInfoList();
         mConversationListActivitySharedPreferences.putKahlaClient(kahlaClient);
         mConversationListActivitySharedPreferences.save();
