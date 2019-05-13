@@ -1,7 +1,5 @@
 package com.ganlvtech.kahlanotify.kahla;
 
-import android.system.Os;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
