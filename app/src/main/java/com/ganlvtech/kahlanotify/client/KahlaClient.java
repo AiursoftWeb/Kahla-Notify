@@ -1,5 +1,6 @@
 package com.ganlvtech.kahlanotify.client;
 
+import android.annotation.SuppressLint;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
@@ -7,11 +8,13 @@ import android.util.SparseArray;
 import com.ganlvtech.kahlanotify.kahla.ApiClient;
 import com.ganlvtech.kahlanotify.kahla.AuthService;
 import com.ganlvtech.kahlanotify.kahla.ConversationService;
+import com.ganlvtech.kahlanotify.kahla.FilesService;
 import com.ganlvtech.kahlanotify.kahla.FriendshipService;
 import com.ganlvtech.kahlanotify.kahla.WebSocketClient;
 import com.ganlvtech.kahlanotify.kahla.event.BaseEvent;
 import com.ganlvtech.kahlanotify.kahla.event.NewMessageEvent;
 import com.ganlvtech.kahlanotify.kahla.exception.ResponseCodeHttpUnauthorizedException;
+import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 import com.ganlvtech.kahlanotify.kahla.models.ContactInfo;
 import com.ganlvtech.kahlanotify.kahla.models.Message;
 import com.ganlvtech.kahlanotify.kahla.models.User;
@@ -20,13 +23,23 @@ import com.ganlvtech.kahlanotify.kahla.responses.auth.InitPusherResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.conversation.GetMessageResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.conversation.SendMessageResponse;
+import com.ganlvtech.kahlanotify.kahla.responses.files.UploadFileResponse;
+import com.ganlvtech.kahlanotify.kahla.responses.files.UploadMediaResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 import com.ganlvtech.kahlanotify.util.Notifier;
 
 import org.json.JSONException;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -63,6 +76,10 @@ public class KahlaClient {
     private OnSendMessageResponseListener mOnSendMessageResponseListener;
     @Nullable
     private OnFailureListener mOnSendMessageFailureListener;
+    @Nullable
+    private OnFailureListener mOnSendMediaFailureListener;
+    @Nullable
+    private OnFailureListener mOnSendFileFailureListener;
     @Nullable
     private OnInitPusherResponseListener mOnInitPusherResponseListener;
     @Nullable
@@ -228,6 +245,14 @@ public class KahlaClient {
 
     public void setOnSendMessageFailureListener(OnFailureListener onSendMessageFailureListener) {
         mOnSendMessageFailureListener = onSendMessageFailureListener;
+    }
+
+    public void setOnSendMediaFailureListener(OnFailureListener onSendMediaFailureListener) {
+        mOnSendMediaFailureListener = onSendMediaFailureListener;
+    }
+
+    public void setOnSendFileFailureListener(OnFailureListener onSendFileFailureListener) {
+        mOnSendFileFailureListener = onSendFileFailureListener;
     }
 
     public void setOnInitPusherResponseListener(OnInitPusherResponseListener onInitPusherResponseListener) {
@@ -421,8 +446,20 @@ public class KahlaClient {
         });
     }
 
-    public void sendMessage(int conversationId, final String content) {
+    public void sendMessage(int conversationId, String content) {
         sendMessage(conversationId, content, true);
+    }
+
+    public void sendMessageAutoEncrypt(int conversationId, String message) {
+        try {
+            ContactInfo contactInfo = getConversationById(conversationId);
+            if (contactInfo != null) {
+                String content = CryptoJs.aesEncrypt(message.getBytes("UTF-8"), contactInfo.aesKey);
+                sendMessage(conversationId, content);
+            }
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     private void sendMessage(final int conversationId, final String content, final boolean autoLoginRetry) {
@@ -452,6 +489,101 @@ public class KahlaClient {
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                     onSendMessageFailure(e);
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+    public void sendMedia(int conversationId, byte[] bytes, String fileName, int width, int height) {
+        sendMedia(conversationId, bytes, fileName, width, height, true);
+    }
+
+    private void sendMedia(final int conversationId, final byte[] bytes, final String fileName, final int width, final int height, final boolean autoLoginRetry) {
+        mustLogin(new OnLoginListener() {
+            @Override
+            public void onLogin() {
+                mApiClient.files().newUploadMediaCall(bytes, fileName)
+                        .enqueue(new Callback() {
+                            @Override
+                            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                                onSendMediaFailure(e);
+                            }
+
+                            @Override
+                            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                try {
+                                    UploadMediaResponse uploadMediaResponse = FilesService.parseUploadMediaResponse(response);
+                                    if (uploadMediaResponse.isResponseOK()) {
+                                        sendMessageAutoEncrypt(conversationId, String.format("[img]%d-%d-%d-0", uploadMediaResponse.fileKey, width, height));
+                                    }
+                                } catch (ResponseCodeHttpUnauthorizedException e) {
+                                    e.printStackTrace();
+                                    mIsLogin = false;
+                                    if (autoLoginRetry) {
+                                        sendMedia(conversationId, bytes, fileName, width, height, false);
+                                    } else {
+                                        onSendMediaFailure(e);
+                                    }
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                    onSendMediaFailure(e);
+                                }
+                            }
+                        });
+            }
+        });
+    }
+
+    public void sendFile(int conversationId, byte[] bytes, String fileName) {
+        sendFile(conversationId, bytes, fileName, true);
+    }
+
+    private void sendFile(final int conversationId, final byte[] bytes, final String fileName, final boolean autoLoginRetry) {
+        mustLogin(new OnLoginListener() {
+            @Override
+            public void onLogin() {
+                mApiClient.files().newUploadFileCall(conversationId, bytes, fileName)
+                        .enqueue(new Callback() {
+                            @Override
+                            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                                onSendFileFailure(e);
+                            }
+
+                            @SuppressLint("DefaultLocale")
+                            @Override
+                            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                try {
+                                    UploadFileResponse uploadFileResponse = FilesService.parseUploadFileResponse(response);
+                                    if (uploadFileResponse.isResponseOK()) {
+                                        float fileSize = uploadFileResponse.fileSize;
+                                        String unit;
+                                        if (fileSize > 1000 * 1000 * 1000) {
+                                            fileSize = fileSize / (1000 * 1000 * 1000);
+                                            unit = "GB";
+                                        } else if (fileSize > 1000 * 1000) {
+                                            fileSize = fileSize / (1000 * 1000);
+                                            unit = "MB";
+                                        } else if (fileSize > 1000) {
+                                            fileSize = fileSize / 1000;
+                                            unit = "KB";
+                                        } else {
+                                            unit = "B";
+                                        }
+                                        sendMessageAutoEncrypt(conversationId, String.format("[file]%d-%s-%.1f %s", uploadFileResponse.fileKey, uploadFileResponse.savedFileName.replace("-", ""), fileSize, unit));
+                                    }
+                                } catch (ResponseCodeHttpUnauthorizedException e) {
+                                    e.printStackTrace();
+                                    mIsLogin = false;
+                                    if (autoLoginRetry) {
+                                        sendFile(conversationId, bytes, fileName, false);
+                                    } else {
+                                        onSendFileFailure(e);
+                                    }
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                    onSendFileFailure(e);
                                 }
                             }
                         });
@@ -574,6 +706,18 @@ public class KahlaClient {
     private void onSendMessageFailure(Exception e) {
         if (mOnSendMessageFailureListener != null) {
             mOnSendMessageFailureListener.onFailure(e, this);
+        }
+    }
+
+    private void onSendMediaFailure(Exception e) {
+        if (mOnSendMediaFailureListener != null) {
+            mOnSendMediaFailureListener.onFailure(e, this);
+        }
+    }
+
+    private void onSendFileFailure(Exception e) {
+        if (mOnSendFileFailureListener != null) {
+            mOnSendFileFailureListener.onFailure(e, this);
         }
     }
 

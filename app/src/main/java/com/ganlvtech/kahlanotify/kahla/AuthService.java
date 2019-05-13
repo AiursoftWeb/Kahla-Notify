@@ -57,9 +57,9 @@ public class AuthService extends BaseService {
 
     public Call newAuthByPasswordCall(String email, String password) {
         RequestBody body = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
                 .addFormDataPart("Email", email)
                 .addFormDataPart("Password", password)
-                .setType(MultipartBody.FORM)
                 .build();
         return newCall(newRequestBuilder("/Auth/AuthByPassword")
                 .post(body)

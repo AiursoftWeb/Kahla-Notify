@@ -13,13 +13,14 @@ public class ApiClient {
     private AuthService mAuthService;
     private FriendshipService mFriendshipService;
     private ConversationService mConversationService;
+    private FilesService mFilesService;
     private OssService mOssService;
     private String mOssServiceBaseUrl;
 
     public ApiClient(String server, String ossServer) {
         mCookieJar = new CookieJar();
         mClient = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
+                .connectTimeout(10, TimeUnit.MINUTES)
                 .cookieJar(mCookieJar)
                 .build();
         mServer = server;
@@ -49,6 +50,13 @@ public class ApiClient {
             mConversationService = new ConversationService(mClient, mServer);
         }
         return mConversationService;
+    }
+
+    public FilesService files() {
+        if (mFilesService == null) {
+            mFilesService = new FilesService(mClient, mServer);
+        }
+        return mFilesService;
     }
 
     public OssService oss() {

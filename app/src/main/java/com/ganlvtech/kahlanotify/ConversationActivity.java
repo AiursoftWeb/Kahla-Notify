@@ -3,9 +3,12 @@ package com.ganlvtech.kahlanotify;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -21,7 +24,6 @@ import com.ganlvtech.kahlanotify.kahla.WebSocketClient;
 import com.ganlvtech.kahlanotify.kahla.event.BaseEvent;
 import com.ganlvtech.kahlanotify.kahla.event.NewMessageEvent;
 import com.ganlvtech.kahlanotify.kahla.event.TimerUpdatedEvent;
-import com.ganlvtech.kahlanotify.kahla.lib.CryptoJs;
 import com.ganlvtech.kahlanotify.kahla.models.ContactInfo;
 import com.ganlvtech.kahlanotify.kahla.models.Message;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
@@ -29,26 +31,23 @@ import com.ganlvtech.kahlanotify.kahla.responses.conversation.GetMessageResponse
 import com.ganlvtech.kahlanotify.kahla.responses.conversation.SendMessageResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 import com.ganlvtech.kahlanotify.util.ConversationListActivitySharedPreferences;
+import com.ganlvtech.kahlanotify.util.SelectedFileInfo;
 
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 public class ConversationActivity extends MyServiceActivity {
     public static final String INTENT_EXTRA_NAME_SERVER = "server";
     public static final String INTENT_EXTRA_NAME_EMAIL = "email";
     public static final String INTENT_EXTRA_NAME_CONVERSATION_ID = "conversationId";
+    private static final int PICK_IMAGE_REQUEST = 1;
+    private static final int PICK_FILE_REQUEST = PICK_IMAGE_REQUEST + 1;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private TextView mToolbarTextViewTitle;
     private TextView mToolbarTextViewSubtitle;
     private ListView mListViewConversations;
     private EditText mEditTextSend;
+    private Button mButtonSendImage;
+    private Button mButtonSendFile;
     private Button mButtonSend;
     private MessageListItemAdapter mMessageListItemAdapter;
     private ConversationListActivitySharedPreferences mConversationListActivitySharedPreferences;
@@ -86,6 +85,8 @@ public class ConversationActivity extends MyServiceActivity {
         mToolbarTextViewSubtitle = findViewById(R.id.toolbarTextViewSubtitle);
         mListViewConversations = findViewById(R.id.listViewConversations);
         mEditTextSend = findViewById(R.id.editTextSend);
+        mButtonSendImage = findViewById(R.id.buttonSendImage);
+        mButtonSendFile = findViewById(R.id.buttonSendFile);
         mButtonSend = findViewById(R.id.buttonSend);
 
         mSwipeRefreshLayout.setColorSchemeColors(getColor(R.color.main_theme));
@@ -120,44 +121,82 @@ public class ConversationActivity extends MyServiceActivity {
             }
         });
 
+        mEditTextSend.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.length() > 0) {
+                    mButtonSendImage.setVisibility(View.GONE);
+                    mButtonSendFile.setVisibility(View.GONE);
+                    mButtonSend.setVisibility(View.VISIBLE);
+                } else {
+                    mButtonSendImage.setVisibility(View.VISIBLE);
+                    mButtonSendFile.setVisibility(View.VISIBLE);
+                    mButtonSend.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+        mButtonSendImage.setVisibility(View.VISIBLE);
+        mButtonSendFile.setVisibility(View.VISIBLE);
+        mButtonSend.setVisibility(View.GONE);
+        mButtonSendImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
+            }
+        });
+        mButtonSendFile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setType("file/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select File"), PICK_FILE_REQUEST);
+            }
+        });
         mButtonSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String message = mEditTextSend.getText().toString();
-                try {
-                    if (mContactInfo != null && mKahlaClient != null) {
-                        String content = CryptoJs.aesEncrypt(message.getBytes("UTF-8"), mContactInfo.aesKey);
-                        mKahlaClient.setOnSendMessageResponseListener(new KahlaClient.OnSendMessageResponseListener() {
-                            @Override
-                            public void onSendMessageResponse(SendMessageResponse sendMessageResponse, KahlaClient kahlaClient) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mEditTextSend.setText("");
-                                        mButtonSend.setText(getString(R.string.send));
-                                        mButtonSend.setEnabled(true);
-                                    }
-                                });
-                            }
-                        });
-                        mKahlaClient.setOnSendMessageFailureListener(new KahlaClient.OnFailureListener() {
-                            @Override
-                            public void onFailure(Exception e, KahlaClient kahlaClient) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mButtonSend.setText(getString(R.string.send));
-                                        mButtonSend.setEnabled(true);
-                                    }
-                                });
-                            }
-                        });
-                        mButtonSend.setText(getString(R.string.sending___));
-                        mButtonSend.setEnabled(false);
-                        mKahlaClient.sendMessage(mConversationId, content);
-                    }
-                } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                if (mContactInfo != null && mKahlaClient != null) {
+                    mKahlaClient.setOnSendMessageResponseListener(new KahlaClient.OnSendMessageResponseListener() {
+                        @Override
+                        public void onSendMessageResponse(SendMessageResponse sendMessageResponse, KahlaClient kahlaClient) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mEditTextSend.setText("");
+                                    mButtonSend.setText(getString(R.string.send));
+                                    mButtonSend.setEnabled(true);
+                                }
+                            });
+                        }
+                    });
+                    mKahlaClient.setOnSendMessageFailureListener(new KahlaClient.OnFailureListener() {
+                        @Override
+                        public void onFailure(Exception e, KahlaClient kahlaClient) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mButtonSend.setText(getString(R.string.send));
+                                    mButtonSend.setEnabled(true);
+                                }
+                            });
+                        }
+                    });
+                    mButtonSend.setText(getString(R.string.sending___));
+                    mButtonSend.setEnabled(false);
+                    mKahlaClient.sendMessageAutoEncrypt(mConversationId, message);
                 }
             }
         });
@@ -167,7 +206,6 @@ public class ConversationActivity extends MyServiceActivity {
     protected void onServiceConnected() {
         super.onServiceConnected();
         assert mMyService != null;
-        List<KahlaClient> kahlaClientList = mMyService.getKahlaClientList();
         mKahlaClient = mMyService.getKahlaClientByServerEmail(mServer, mEmail);
         if (mKahlaClient == null) {
             finish();
@@ -251,6 +289,32 @@ public class ConversationActivity extends MyServiceActivity {
         });
         mSwipeRefreshLayout.setRefreshing(true);
         mKahlaClient.fetchMessage(mConversationId);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+            switch (requestCode) {
+                case PICK_IMAGE_REQUEST: {
+                    if (mKahlaClient != null) {
+                        Uri uri = data.getData();
+                        SelectedFileInfo selectedFileInfo = new SelectedFileInfo(this, uri);
+                        selectedFileInfo.decodeImage();
+                        mKahlaClient.sendMedia(mConversationId, selectedFileInfo.bytes, selectedFileInfo.displayName, selectedFileInfo.width, selectedFileInfo.height);
+                    }
+                }
+                break;
+                case PICK_FILE_REQUEST: {
+                    if (mKahlaClient != null) {
+                        Uri uri = data.getData();
+                        SelectedFileInfo selectedFileInfo = new SelectedFileInfo(this, uri);
+                        mKahlaClient.sendFile(mConversationId, selectedFileInfo.bytes, selectedFileInfo.displayName);
+                    }
+                }
+                break;
+            }
+        }
     }
 
     private void updateTitle() {

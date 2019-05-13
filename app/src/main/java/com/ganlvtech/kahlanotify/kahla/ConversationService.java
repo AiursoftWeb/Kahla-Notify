@@ -54,8 +54,8 @@ public class ConversationService extends BaseService {
                 .addPathSegment(String.valueOf(id))
                 .build();
         RequestBody body = new MultipartBody.Builder()
-                .addFormDataPart("content", content)
                 .setType(MultipartBody.FORM)
+                .addFormDataPart("content", content)
                 .build();
         return newCall(newRequestBuilder(url)
                 .post(body)
