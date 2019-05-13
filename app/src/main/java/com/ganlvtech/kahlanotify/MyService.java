@@ -61,6 +61,7 @@ public class MyService extends Service {
     }
 
     public void removeKahlaClient(@NonNull KahlaClient kahlaClient) {
+        kahlaClient.getWebSocketClient().stop();
         mKahlaClientList.remove(kahlaClient);
         saveConfig();
     }
