@@ -28,14 +28,16 @@ public class FriendshipService extends BaseService {
         return new MyFriendsResponse(json);
     }
 
-    public Call newMyFriendsCall(boolean orderByName) {
+    public Call newMyFriendsCall(boolean orderByName, int take, int skip) {
         HttpUrl url = newHttpUrlBuilder("/Friendship/MyFriends")
                 .addQueryParameter("orderByName", String.valueOf(orderByName))
+                .addQueryParameter("take", String.valueOf(take))
+                .addQueryParameter("skip", String.valueOf(skip))
                 .build();
         return newGetCall(url);
     }
 
-    public MyFriendsResponse MyFriends(boolean orderByName) throws IOException, ResponseCodeHttpUnauthorizedException, JSONException {
-        return parseMyFriendsResponse(newMyFriendsCall(orderByName).execute());
+    public MyFriendsResponse MyFriends(boolean orderByName, int take, int skip) throws IOException, ResponseCodeHttpUnauthorizedException, JSONException {
+        return parseMyFriendsResponse(newMyFriendsCall(orderByName, take, skip).execute());
     }
 }

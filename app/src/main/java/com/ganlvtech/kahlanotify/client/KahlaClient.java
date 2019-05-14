@@ -372,7 +372,7 @@ public class KahlaClient {
         mustLogin(new OnLoginListener() {
             @Override
             public void onLogin() {
-                mApiClient.friendship().newMyFriendsCall(false)
+                mApiClient.friendship().newMyFriendsCall(false, Integer.MAX_VALUE, 0)
                         .enqueue(new Callback() {
                             @Override
                             public void onFailure(@NonNull Call call, @NonNull final IOException e) {
