@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar.TranslucentDecor">
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:screenOrientation">portrait</item>
+    </style>
+
+    <style name="AppTheme.LoginActivity" parent="AppTheme">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <style name="AppTheme.ConversationActivity" parent="AppTheme">
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@color/main_theme</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <style name="AppTheme.ImageActivity" parent="android:Theme.Material.Light.NoActionBar.Fullscreen">
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:background">@android:color/black</item>
+    </style>
+</resources>

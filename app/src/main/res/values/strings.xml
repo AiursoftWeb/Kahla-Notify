@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Kahla Notify</string>
+    <string name="title_activity_log">Logs</string>
+    <string name="server_address">Server Address</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="logging_in___">Logging in...</string>
+    <string name="https___">https://</string>
+    <string name="sign_in">Sign in</string>
+    <string name="server_and_email_already_exists">Server and email already exists.</string>
+    <string name="send">Send</string>
+    <string name="sending___">Sending...</string>
+    <string name="icon">Icon</string>
+    <string name="at">\@</string>
+    <string name="version_number">v2.0-12f428c</string>
+    <string name="add_new_account">Add New Account</string>
+    <string name="file">File</string>
+    <string name="image">Image</string>
+</resources>
