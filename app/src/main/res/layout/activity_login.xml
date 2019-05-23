@@ -1,70 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    android:gravity="center"
-    android:padding="16dp"
-    tools:context=".LoginActivity">
-
-    <LinearLayout
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:gravity="center"
+        android:fitsSystemWindows="true"
+        tools:context=".LoginActivity"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:orientation="vertical">
 
-        <ImageView
+    <ImageView
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:contentDescription="@string/icon"
-            android:src="@drawable/icon" />
+            android:src="@drawable/icon"/>
 
-        <TextView
+    <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:layout_marginBottom="64dp"
             android:text="@string/app_name"
-            android:textSize="18sp" />
+            android:textSize="18sp"/>
 
-        <TextView
+    <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/server_address"
-            android:textColor="@color/main_theme" />
+            android:textColor="@color/main_theme"/>
 
-        <android.widget.AutoCompleteTextView
+    <android.widget.AutoCompleteTextView
             android:id="@+id/autoCompleteTextViewServer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:completionThreshold="1" />
+            android:completionThreshold="1"/>
 
-        <TextView
+    <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/email"
-            android:textColor="@color/main_theme" />
+            android:textColor="@color/main_theme"/>
 
-        <android.widget.AutoCompleteTextView
+    <android.widget.AutoCompleteTextView
             android:id="@+id/autoCompleteTextViewEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:completionThreshold="1" />
+            android:completionThreshold="1"/>
 
-        <TextView
+    <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/password"
-            android:textColor="@color/main_theme" />
+            android:textColor="@color/main_theme"/>
 
-        <EditText
+    <EditText
             android:id="@+id/editTextPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPassword" />
+            android:inputType="textPassword"/>
 
-        <Button
+    <Button
             android:id="@+id/buttonLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -72,7 +69,5 @@
             android:layout_marginTop="8dp"
             android:layout_marginEnd="4dp"
             android:background="@drawable/round_button"
-            android:text="@string/login"
-            android:textColor="@color/main_theme" />
-    </LinearLayout>
-</RelativeLayout>
+            android:text="@string/login"/>
+</LinearLayout>

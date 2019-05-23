@@ -1,16 +1,15 @@
 package com.ganlvtech.kahlanotify;
 
-import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-
+import android.support.v7.app.AppCompatActivity;
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-public class ImageActivity extends Activity {
+public class ImageActivity extends AppCompatActivity {
     public static final String INTENT_EXTRA_NAME_IMAGE_URL = "imageUrl";
     private String mImageUrl;
     private SubsamplingScaleImageView mImageViewImage;

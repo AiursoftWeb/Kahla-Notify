@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar.TranslucentDecor">
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/main_theme</item>
         <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:screenOrientation">portrait</item>
+        <item name="android:statusBarColor">@color/main_theme</item>
     </style>
 
     <style name="AppTheme.LoginActivity" parent="AppTheme">
@@ -14,12 +16,11 @@
     <style name="AppTheme.ConversationActivity" parent="AppTheme">
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:statusBarColor">@color/main_theme</item>
         <item name="android:windowSoftInputMode">adjustResize</item>
     </style>
 
-    <style name="AppTheme.ImageActivity" parent="android:Theme.Material.Light.NoActionBar.Fullscreen">
+    <style name="AppTheme.ImageActivity" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="android:windowTranslucentNavigation">true</item>
-        <item name="android:background">@android:color/black</item>
+        <item name="background">@android:color/black</item>
     </style>
 </resources>
