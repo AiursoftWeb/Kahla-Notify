@@ -1,10 +1,10 @@
 package com.ganlvtech.kahlanotify;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
-public class LogActivity extends Activity {
+public class LogActivity extends AppCompatActivity {
     private TextView textView;
 
     @Override

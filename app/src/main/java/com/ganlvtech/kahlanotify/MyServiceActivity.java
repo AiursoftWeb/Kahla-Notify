@@ -1,17 +1,17 @@
 package com.ganlvtech.kahlanotify;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 @SuppressLint("Registered")
-public class MyServiceActivity extends Activity {
+public class MyServiceActivity extends AppCompatActivity {
     private static final String TAG = "MyServiceActivity";
     @Nullable
     protected MyService mMyService;

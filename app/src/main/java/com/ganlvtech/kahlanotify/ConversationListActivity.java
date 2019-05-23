@@ -1,6 +1,5 @@
 package com.ganlvtech.kahlanotify;
 
-import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,11 +7,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.components.AccountListItemAdapter;
 import com.ganlvtech.kahlanotify.components.ContactInfoListItemAdapter;
@@ -218,7 +217,7 @@ public class ConversationListActivity extends MyServiceActivity {
     }
 
     private void signOut(@NonNull final KahlaClient kahlaClient) {
-        new AlertDialog.Builder(ConversationListActivity.this)
+        new AlertDialog.Builder(this)
                 .setTitle("Sign out")
                 .setMessage("Are you sure to sign out?")
                 .setPositiveButton("Sign out", new DialogInterface.OnClickListener() {
