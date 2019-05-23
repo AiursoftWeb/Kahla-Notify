@@ -516,7 +516,7 @@ public class KahlaClient {
                                 try {
                                     UploadMediaResponse uploadMediaResponse = FilesService.parseUploadMediaResponse(response);
                                     if (uploadMediaResponse.isResponseOK()) {
-                                        sendMessageAutoEncrypt(conversationId, String.format("[img]%d-%d-%d-0", uploadMediaResponse.fileKey, width, height));
+                                        sendMessageAutoEncrypt(conversationId, String.format("[img]%d-%d-%d-0", uploadMediaResponse.fileKey, height, width));
                                     }
                                 } catch (ResponseCodeHttpUnauthorizedException e) {
                                     e.printStackTrace();
