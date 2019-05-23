@@ -10,13 +10,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.components.IconTitleContent;
 import com.ganlvtech.kahlanotify.components.MessageListItemAdapter;
@@ -46,8 +40,8 @@ public class ConversationActivity extends MyServiceActivity {
     private TextView mToolbarTextViewSubtitle;
     private ListView mListViewConversations;
     private EditText mEditTextSend;
-    private Button mButtonSendImage;
-    private Button mButtonSendFile;
+    private ImageButton mButtonSendImage;
+    private ImageButton mButtonSendFile;
     private Button mButtonSend;
     private MessageListItemAdapter mMessageListItemAdapter;
     private ConversationListActivitySharedPreferences mConversationListActivitySharedPreferences;
