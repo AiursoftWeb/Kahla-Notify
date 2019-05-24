@@ -8,6 +8,8 @@
         <item name="android:statusBarColor">@color/main_theme</item>
     </style>
 
+    <style name="AppTheme._Toolbar" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar" />
+
     <style name="AppTheme.LoginActivity" parent="AppTheme">
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowSoftInputMode">adjustResize</item>

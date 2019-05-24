@@ -24,6 +24,7 @@ import com.ganlvtech.kahlanotify.kahla.models.ContactInfo;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.MeResponse;
 import com.ganlvtech.kahlanotify.kahla.responses.friendship.MyFriendsResponse;
 import com.ganlvtech.kahlanotify.util.ConversationListActivitySharedPreferences;
+import com.jaeger.library.StatusBarUtil;
 
 import java.util.List;
 
@@ -56,10 +57,12 @@ public class ConversationListActivity extends MyServiceActivity {
         mTextViewNewAccount = findViewById(R.id.textViewNewAccount);
         mToolbar = findViewById(R.id.toolbar);
 
+        StatusBarUtil.setColorNoTranslucentForDrawerLayout(this, mDrawerLayoutConversationListActivity, getColor(R.color.main_theme));
+
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         mDrawerToggle = new ActionBarDrawerToggle(this,mDrawerLayoutConversationListActivity,R.string.Menu,R.string.Menu);
         mDrawerLayoutConversationListActivity.addDrawerListener(mDrawerToggle);
