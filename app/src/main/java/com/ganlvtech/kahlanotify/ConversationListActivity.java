@@ -62,7 +62,7 @@ public class ConversationListActivity extends MyServiceActivity {
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         mDrawerToggle = new ActionBarDrawerToggle(this,mDrawerLayoutConversationListActivity,R.string.Menu,R.string.Menu);
         mDrawerLayoutConversationListActivity.addDrawerListener(mDrawerToggle);
