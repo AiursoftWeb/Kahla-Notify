@@ -16,6 +16,8 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:popupTheme="@style/AppTheme._Toolbar"
+            android:theme="@style/AppTheme._Toolbar"
             app:navigationIcon="@drawable/ic_menu_black_24dp"
             android:background="@color/main_theme">
 

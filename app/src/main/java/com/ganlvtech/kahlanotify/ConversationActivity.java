@@ -7,8 +7,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
 import com.ganlvtech.kahlanotify.client.KahlaClient;
@@ -43,6 +45,7 @@ public class ConversationActivity extends MyServiceActivity {
     private ImageButton mButtonSendImage;
     private ImageButton mButtonSendFile;
     private Button mButtonSend;
+    private Toolbar mToolbar;
     private MessageListItemAdapter mMessageListItemAdapter;
     private ConversationListActivitySharedPreferences mConversationListActivitySharedPreferences;
     private String mServer;
@@ -82,6 +85,11 @@ public class ConversationActivity extends MyServiceActivity {
         mButtonSendImage = findViewById(R.id.buttonSendImage);
         mButtonSendFile = findViewById(R.id.buttonSendFile);
         mButtonSend = findViewById(R.id.buttonSend);
+        mToolbar = findViewById(R.id.toolbar);
+
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         mSwipeRefreshLayout.setColorSchemeColors(getColor(R.color.main_theme));
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -351,5 +359,13 @@ public class ConversationActivity extends MyServiceActivity {
             intent.putExtra(ImageActivity.INTENT_EXTRA_NAME_IMAGE_URL, iconTitleContentItem.contentImageUrl);
             startActivity(intent);
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == android.R.id.home){
+            onBackPressed();
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
