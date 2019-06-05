@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+
 import com.ganlvtech.kahlanotify.client.KahlaClient;
 import com.ganlvtech.kahlanotify.kahla.responses.auth.AuthByPasswordResponse;
 import com.ganlvtech.kahlanotify.util.AccountListSharedPreferences;
@@ -149,7 +150,11 @@ public class LoginActivity extends MyServiceActivity {
                 });
             }
         });
-        mKahlaClient.login();
+        try {
+            mKahlaClient.login();
+        } catch (IllegalArgumentException e) {
+            loginFailed(e.getMessage());
+        }
     }
 
     private void loginFailed(String message) {
